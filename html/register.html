@@ -638,7 +638,7 @@
     </div>
 
     <p class="login-prompt" style="margin-top:20px">
-      Already have an account? <a href="internlink-login.html">Log in →</a>
+      Already have an account? <a href="login.html">Log in →</a>
     </p>
   </div>
 </div>
@@ -742,35 +742,64 @@
   }
 
   function handleSignup() {
-    const err = document.getElementById('errorMsg');
-    const terms = document.getElementById('termsCheck');
-    if (!terms.checked) {
-      err.textContent = 'You must accept the Terms of Service to continue.';
-      err.classList.add('show'); return;
-    }
-    err.classList.remove('show');
-    const btn = document.getElementById('submitBtn');
-    btn.textContent = 'Creating account…';
-    btn.disabled = true;
-    setTimeout(() => {
+  const err = document.getElementById('errorMsg');
+  const terms = document.getElementById('termsCheck');
+
+  if (!terms.checked) {
+    err.textContent = 'You must accept the Terms of Service to continue.';
+    err.classList.add('show'); 
+    return;
+  }
+
+  err.classList.remove('show');
+  const btn = document.getElementById('submitBtn');
+  btn.textContent = 'Creating account…';
+  btn.disabled = true;
+
+  // Collect all input values
+  const data = {
+    type: currentType,
+    firstName: document.getElementById('firstName').value,
+    lastName: document.getElementById('lastName').value,
+    email: document.getElementById('email').value,
+    password: document.getElementById('password').value,
+    university: currentType === 'student' ? document.getElementById('university').value : '',
+    field: currentType === 'student' ? document.getElementById('field').value : '',
+    year: currentType === 'student' ? document.getElementById('year').value : '',
+    wilaya: currentType === 'student' ? document.getElementById('wilaya').value : document.getElementById('companyWilaya')?.value || '',
+    companyName: currentType === 'company' ? document.getElementById('companyName').value : '',
+    sector: currentType === 'company' ? document.getElementById('sector').value : '',
+    skills: document.getElementById('skills').value,
+    bio: document.getElementById('bio').value
+  };
+
+  // Send POST request to PHP backend
+  fetch('login.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  .then(res => res.json())
+  .then(res => {
+    if (res.success) {
       btn.textContent = '✓ Account Created!';
       btn.style.background = 'var(--accent3)';
-      // In a real app: redirect to dashboard/onboarding
-    }, 1800);
-  }
-</script>
-
-<script>
-  (function() {
-    const saved = localStorage.getItem('il-theme');
-    if (saved === 'light') {
-      document.body.classList.add('light');
-      const k = document.getElementById('themeKnob');
-      const l = document.getElementById('themeLabel');
-      if (k) k.textContent = '☀️';
-      if (l) l.textContent = 'Light';
+      // redirect after short delay
+      setTimeout(() => window.location.href = 'dashboard.html', 1000);
+    } else {
+      err.textContent = res.message || 'An error occurred.';
+      err.classList.add('show');
+      btn.textContent = 'Create Account';
+      btn.disabled = false;
     }
-  })();
+  })
+  .catch(() => {
+    err.textContent = 'Server error. Try again later.';
+    err.classList.add('show');
+    btn.textContent = 'Create Account';
+    btn.disabled = false;
+  });
+}
 
   function toggleTheme() {
     const isLight = document.body.classList.toggle('light');

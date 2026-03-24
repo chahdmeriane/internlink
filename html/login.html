@@ -393,7 +393,7 @@
   <div class="form-container">
     <div class="form-header">
       <div class="form-title">Log in</div>
-      <p class="form-sub">Don't have an account? <a href="internlink-signup.html">Sign up free</a></p>
+      <p class="form-sub">Don't have an account? <a href="register.html">Sign up free</a></p>
     </div>
 
     <!-- Role selector -->
@@ -458,7 +458,7 @@
     </div>
 
     <p class="signup-prompt">
-      New to internLink? <a href="internlink-signup.html">Create your free account →</a>
+      New to internLink? <a href="register.html">Create your free account →</a>
     </p>
   </div>
 </div>
@@ -481,36 +481,52 @@
     }
   }
 
-  function handleLogin(e) {
-    const btn = document.getElementById('submitBtn');
-    const email = document.getElementById('email').value;
-    const pass = document.getElementById('password').value;
-    const error = document.getElementById('errorMsg');
+ function handleLogin(e) {
+  e.preventDefault(); // prevent default button behavior
 
-    if (!email || !pass) {
-      error.textContent = 'Please fill in all fields.';
-      error.classList.add('show');
-      return;
-    }
-    error.classList.remove('show');
-
-    // Ripple effect
-    const rect = btn.getBoundingClientRect();
-    const ripple = document.createElement('span');
-    ripple.className = 'ripple';
-    const size = Math.max(btn.offsetWidth, btn.offsetHeight);
-    ripple.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
-    btn.appendChild(ripple);
-    setTimeout(() => ripple.remove(), 600);
-
-    btn.textContent = 'Logging in…';
-    btn.disabled = true;
-    setTimeout(() => {
-      btn.textContent = 'Log In';
-      btn.disabled = false;
-      // In a real app: redirect to dashboard
-    }, 1800);
+  const btn = document.getElementById('submitBtn');
+  const email = document.getElementById('email').value;
+  const pass = document.getElementById('password').value;
+  const error = document.getElementById('errorMsg');
+  const roleBtn = document.querySelector('.role-btn.active');
+const role = roleBtn.innerText.replace(/[^a-zA-Z]/g, '').toLowerCase();
+  if (!email || !pass) {
+    error.textContent = 'Please fill in all fields.';
+    error.classList.add('show');
+    return;
   }
+  error.classList.remove('show');
+
+  // Disable button
+  btn.textContent = 'Logging in…';
+  btn.disabled = true;
+
+  // Send POST request to login.php
+  fetch('login.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password: pass, role })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      // Redirect or show success
+      window.location.href = 'index.html'; // change to your dashboard
+    } else {
+      error.textContent = data.message;
+      error.classList.add('show');
+    }
+  })
+  .catch(err => {
+    error.textContent = 'Server error. Try again later.';
+    error.classList.add('show');
+    console.error(err);
+  })
+  .finally(() => {
+    btn.textContent = 'Log In';
+    btn.disabled = false;
+  });
+}
 </script>
 
 <script>
