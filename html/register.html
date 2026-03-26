@@ -184,9 +184,9 @@
         </div>
       </div>
       <div class="form-grid-2">
-        <div class="field"><label>First Name *</label><div class="input-wrap"><span class="input-icon">👤</span><input type="text" id="firstName" placeholder="Amina"/></div></div>
-        <div class="field"><label>Last Name *</label><div class="input-wrap"><span class="input-icon">👤</span><input type="text" id="lastName" placeholder="Khelifa"/></div></div>
-        <div class="field span2"><label>Email address *</label><div class="input-wrap"><span class="input-icon">✉</span><input type="email" id="email" placeholder="your@university.dz"/></div></div>
+        <div class="field"><label>First Name *</label><div class="input-wrap"><span class="input-icon">👤</span><input type="text" id="firstName" placeholder="e.g. Alex"/></div></div>
+        <div class="field"><label>Last Name *</label><div class="input-wrap"><span class="input-icon">👤</span><input type="text" id="lastName" placeholder="e.g. Johnson"/></div></div>
+        <div class="field span2"><label>Email address *</label><div class="input-wrap"><span class="input-icon">✉</span><input type="email" id="email" placeholder="your@email.com"/></div></div>
         <div class="field span2">
           <label>Password *</label>
           <div class="input-wrap">
@@ -210,14 +210,15 @@
     <div id="step2" style="display:none">
       <div id="studentFields">
         <div class="form-grid-2">
-          <div class="field span2"><label>University *</label><div class="input-wrap"><span class="input-icon">🏛</span><input type="text" id="university" placeholder="e.g. USTHB, ESI, ENSIA…"/></div></div>
+          <div class="field span2"><label>University *</label><div class="input-wrap"><span class="input-icon">🏛</span><input type="text" id="university" placeholder="e.g. MIT, Oxford, Sorbonne…"/></div></div>
           <div class="field span2"><label>Field of Study *</label><div class="input-wrap"><span class="input-icon">📚</span>
             <select id="fieldOfStudy"><option value="" disabled selected>Select your field…</option><option>Computer Science</option><option>Software Engineering</option><option>Data Science</option><option>Electronics & Telecommunications</option><option>Civil Engineering</option><option>Business Administration</option><option>Finance & Accounting</option><option>Marketing</option><option>Medicine</option><option>Architecture</option><option>Other</option></select>
           </div></div>
           <div class="field"><label>Academic Year *</label><div class="input-wrap"><span class="input-icon">📅</span>
             <select id="year"><option value="" disabled selected>Year…</option><option>1st year</option><option>2nd year</option><option>3rd year</option><option>Master 1</option><option>Master 2</option></select>
           </div></div>
-          <div class="field"><label>Wilaya</label><div class="input-wrap"><span class="input-icon">📍</span><input type="text" id="wilaya" placeholder="e.g. Alger, Oran…"/></div></div>
+          <div class="field"><label>City / Region</label><div class="input-wrap"><span class="input-icon">📍</span><input type="text" id="wilaya" placeholder="e.g. London, New York…"/></div></div>
+          <div class="field span2"><label>Country</label><div class="input-wrap"><span class="input-icon">🌍</span><input type="text" id="country" placeholder="e.g. France, USA, Algeria…"/></div></div>
         </div>
       </div>
       <div id="companyFields" style="display:none">
@@ -226,7 +227,8 @@
           <div class="field span2"><label>Activity Sector *</label><div class="input-wrap"><span class="input-icon">⚙️</span>
             <select id="sector"><option value="" disabled selected>Select sector…</option><option>Technology & IT</option><option>Finance & Banking</option><option>Healthcare</option><option>Education</option><option>Construction & Engineering</option><option>Energy & Utilities</option><option>Retail & Commerce</option><option>Media & Communication</option><option>Government & Public sector</option><option>Other</option></select>
           </div></div>
-          <div class="field span2"><label>Wilaya *</label><div class="input-wrap"><span class="input-icon">📍</span><input type="text" id="companyWilaya" placeholder="e.g. Alger, Oran, Sétif…"/></div></div>
+          <div class="field span2"><label>City / Region *</label><div class="input-wrap"><span class="input-icon">📍</span><input type="text" id="companyWilaya" placeholder="e.g. Paris, Dubai, Toronto…"/></div></div>
+          <div class="field span2"><label>Country *</label><div class="input-wrap"><span class="input-icon">🌍</span><input type="text" id="companyCountry" placeholder="e.g. France, UAE, Canada…"/></div></div>
         </div>
       </div>
       <div style="display:flex;gap:12px;margin-top:4px">
@@ -348,6 +350,7 @@
       field:       currentType === 'student' ? document.getElementById('fieldOfStudy').value : '',
       year:        currentType === 'student' ? document.getElementById('year').value : '',
       wilaya:      currentType === 'student' ? document.getElementById('wilaya').value : (document.getElementById('companyWilaya')?.value || ''),
+      country:     currentType === 'student' ? (document.getElementById('country')?.value || '') : (document.getElementById('companyCountry')?.value || ''),
       companyName: currentType === 'company' ? document.getElementById('companyName').value : '',
       sector:      currentType === 'company' ? document.getElementById('sector').value : '',
       skills:      document.getElementById('skills').value,
