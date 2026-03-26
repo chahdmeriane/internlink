@@ -63,7 +63,7 @@ $message = "Hello $name,\n\n"
          . "This code expires in 10 minutes.\n"
          . "If you did not request this, ignore this email.\n\n"
          . "— The internLink Team";
-$headers = "From: noreply@internlink.dz\r\nX-Mailer: PHP/" . phpversion();
+$headers = "From: noreply@internlink.com\r\nX-Mailer: PHP/" . phpversion();
 
 // mail() is for production. For local dev, log to file instead.
 if (!mail($to, $subject, $message, $headers)) {
