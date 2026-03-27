@@ -1,8 +1,8 @@
 <?php
 $host = 'localhost';
-$db   = 'internlink';
+$db   = 'internlink';  // اسم قاعدة البيانات
 $user = 'root';
-$pass = '';
+$pass = '';            // عادةً في XAMPP كلمة المرور فارغة
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
@@ -13,8 +13,9 @@ $options = [
 ];
 
 try {
-     $pdo = new PDO($dsn, $user, $pass, $options);
+    $pdo = new PDO($dsn, $user, $pass, $options);
+    // echo "Connected successfully"; // للتأكد من الاتصال
 } catch (\PDOException $e) {
-     throw new \PDOException($e->getMessage(), (int)$e->getCode());
+    throw new \PDOException($e->getMessage(), (int)$e->getCode());
 }
 ?>
