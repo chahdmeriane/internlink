@@ -358,10 +358,12 @@
     };
 
     // FIX: was incorrectly calling login.php — now correctly calls register.php
+    const formData = new FormData();
+    Object.keys(data).forEach(key => formData.append(key, data[key]));
+
     fetch('../phpsecure/register.php', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(data),
+      method: 'POST',
+      body:   formData,
     })
     .then(r => r.json())
     .then(res => {
