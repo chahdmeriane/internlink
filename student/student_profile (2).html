@@ -298,7 +298,7 @@
     <div class="sidebar-label">Menu</div>
     <a class="nav-link" href="student_dashboard.html"><span class="icon">🏠</span>Dashboard</a>
     <a class="nav-link active" href="student_profile.html"><span class="icon">👤</span>My Profile</a>
-    <a class="nav-link" href="internships.html"><span class="icon">🔍</span>Browse Internships</a>
+    <a class="nav-link" href="internships_dash.html"><span class="icon">🔍</span>Browse Internships</a>
     <a class="nav-link" href="applications.html"><span class="icon">📋</span>My Applications <span class="nav-badge" id="appBadge">0</span></a>
   </div>
   <div class="sidebar-section">
@@ -327,7 +327,8 @@
       <div class="hero-meta">
         <span id="heroUni">🏛 —</span>
         <span id="heroField">📚 —</span>
-        <span id="heroWilaya">📍 —</span>
+        <span id="heroCountry">🌍 —</span>
+        <span id="heroCity">📍 —</span>
         <span id="heroYear">📅 —</span>
       </div>
     </div>
@@ -381,21 +382,46 @@
           </div>
           <div class="form-group">
             <label class="form-label">Phone Number</label>
-            <input class="form-input" type="tel" id="phone" placeholder="+213 6xx xxx xxx"/>
+            <input class="form-input" type="tel" id="phone" placeholder="+1 555 000 0000 (any country)"/>
           </div>
           <div class="form-group">
             <label class="form-label">University <span class="req">*</span></label>
             <input class="form-input" type="text" id="university" placeholder="e.g. USTHB, ESI, ENSIA…"/>
           </div>
           <div class="form-group">
-            <label class="form-label">Wilaya</label>
-            <select class="form-select" id="wilaya">
-              <option value="">Select wilaya…</option>
-              <option>Alger</option><option>Oran</option><option>Constantine</option>
-              <option>Sétif</option><option>Annaba</option><option>Batna</option>
-              <option>Blida</option><option>Béjaïa</option><option>Tlemcen</option>
-              <option>Tizi Ouzou</option><option>Biskra</option><option>Other</option>
+            <label class="form-label">Country <span class="req">*</span></label>
+            <select class="form-select" id="country">
+              <option value="">Select your country…</option>
+              <option>Afghanistan</option><option>Albania</option><option>Algeria</option>
+              <option>Argentina</option><option>Australia</option><option>Austria</option>
+              <option>Bangladesh</option><option>Belgium</option><option>Brazil</option>
+              <option>Canada</option><option>Chile</option><option>China</option>
+              <option>Colombia</option><option>Croatia</option><option>Czech Republic</option>
+              <option>Denmark</option><option>Egypt</option><option>Ethiopia</option>
+              <option>Finland</option><option>France</option><option>Germany</option>
+              <option>Ghana</option><option>Greece</option><option>Hungary</option>
+              <option>India</option><option>Indonesia</option><option>Iran</option>
+              <option>Iraq</option><option>Ireland</option><option>Israel</option>
+              <option>Italy</option><option>Japan</option><option>Jordan</option>
+              <option>Kenya</option><option>Kuwait</option><option>Lebanon</option>
+              <option>Libya</option><option>Malaysia</option><option>Mexico</option>
+              <option>Morocco</option><option>Netherlands</option><option>New Zealand</option>
+              <option>Nigeria</option><option>Norway</option><option>Pakistan</option>
+              <option>Palestine</option><option>Philippines</option><option>Poland</option>
+              <option>Portugal</option><option>Qatar</option><option>Romania</option>
+              <option>Russia</option><option>Saudi Arabia</option><option>Senegal</option>
+              <option>Serbia</option><option>Singapore</option><option>South Africa</option>
+              <option>South Korea</option><option>Spain</option><option>Sudan</option>
+              <option>Sweden</option><option>Switzerland</option><option>Syria</option>
+              <option>Thailand</option><option>Tunisia</option><option>Turkey</option>
+              <option>Ukraine</option><option>United Arab Emirates</option>
+              <option>United Kingdom</option><option>United States</option>
+              <option>Vietnam</option><option>Yemen</option><option>Other</option>
             </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">City</label>
+            <input class="form-input" type="text" id="wilaya" placeholder="e.g. New York, London, Paris…"/>
           </div>
           <div class="form-group">
             <label class="form-label">Field of Study <span class="req">*</span></label>
@@ -405,7 +431,7 @@
               <option>Data Science</option><option>Electronics & Telecommunications</option>
               <option>Civil Engineering</option><option>Business Administration</option>
               <option>Finance & Accounting</option><option>Marketing</option>
-              <option>Medicine</option><option>Architecture</option><option>Other</option>
+              <option>Medicine</option><option>Architecture</option><option>Law</option><option>Psychology</option><option>Biology / Life Sciences</option><option>Physics / Chemistry</option><option>Design / UX</option><option>Journalism / Media</option><option>Other</option>
             </select>
           </div>
           <div class="form-group">
@@ -413,7 +439,7 @@
             <select class="form-select" id="yearField">
               <option value="">Select year…</option>
               <option>1st year</option><option>2nd year</option><option>3rd year</option>
-              <option>Master 1</option><option>Master 2</option>
+              <option>Master 1</option><option>Master 2</option><option>PhD / Doctorate</option><option>Bootcamp / Training</option><option>Other</option>
             </select>
           </div>
         </div>
@@ -532,19 +558,21 @@
         document.getElementById('navName').textContent = p.first_name || '';
         document.getElementById('heroName').textContent = (p.first_name || '') + ' ' + (p.last_name || '');
         document.getElementById('heroEmail').textContent = p.email || '—';
-        document.getElementById('heroUni').textContent   = '🏛 ' + (p.university || '—');
-        document.getElementById('heroField').textContent = '📚 ' + (p.field_of_study || '—');
-        document.getElementById('heroWilaya').textContent= '📍 ' + (p.wilaya || '—');
-        document.getElementById('heroYear').textContent  = '📅 ' + (p.academic_year || '—');
+        document.getElementById('heroUni').textContent     = '🏛 ' + (p.university || '—');
+        document.getElementById('heroField').textContent   = '📚 ' + (p.field_of_study || '—');
+        document.getElementById('heroCountry').textContent = '🌍 ' + (p.country || '—');
+        document.getElementById('heroCity').textContent    = '📍 ' + (p.wilaya || '—');
+        document.getElementById('heroYear').textContent    = '📅 ' + (p.academic_year || '—');
 
         // Fill form fields
         setValue('firstName', p.first_name);
         setValue('lastName',  p.last_name);
         setValue('emailField',p.email);
         setValue('phone',     p.phone);
-        setValue('university',p.university);
-        setValue('wilaya',    p.wilaya);
-        setValue('fieldStudy',p.field_of_study);
+        setValue('university', p.university);
+        setValue('country',    p.country);
+        setValue('wilaya',     p.wilaya);
+        setValue('fieldStudy', p.field_of_study);
         setValue('yearField', p.academic_year);
         setValue('linkedin',  p.linkedin);
         setValue('github',    p.github);
@@ -582,7 +610,7 @@
 
   // ── Profile completion ─────────────────────────────────────────────────────
   function setCompletion(p) {
-    const fields = ['first_name','last_name','email','university','field_of_study','academic_year','wilaya','bio','skills','cv_path'];
+    const fields = ['first_name','last_name','email','university','field_of_study','academic_year','country','wilaya','bio','skills','cv_path'];
     const filled = fields.filter(f => p[f] && p[f] !== '').length;
     const pct    = Math.round(filled / fields.length * 100);
     const circ   = 188.5;
@@ -612,6 +640,7 @@
         lastName:       document.getElementById('lastName').value.trim(),
         phone:          document.getElementById('phone').value.trim(),
         university:     document.getElementById('university').value.trim(),
+        country:        document.getElementById('country').value,
         wilaya:         document.getElementById('wilaya').value,
         field_of_study: document.getElementById('fieldStudy').value,
         academic_year:  document.getElementById('yearField').value,

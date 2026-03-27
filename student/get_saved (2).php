@@ -1,5 +1,5 @@
 <?php
-// ── get_saved.php ────────────────────────────────────────────────────────────
+// ── get_saved.php ─────────────────────────────────────────────────────────
 session_start();
 header('Content-Type: application/json');
 require 'db.php';

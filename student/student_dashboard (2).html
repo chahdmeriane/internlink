@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard — internLink</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#0a0f1e;--surface:#111827;--surface2:#1a2236;--accent:#4f8ef7;--accent2:#a78bfa;--accent3:#34d399;--text:#f0f4ff;--muted:#8899bb;--border:rgba(79,142,247,0.18);--danger:#f87171;--warn:#fbbf24;--nav-h:68px;--sidebar-w:230px}
+    html{scroll-behavior:smooth}
+    body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+
+    .bg-blobs{position:fixed;inset:0;z-index:0;pointer-events:none}
+    .blob{position:absolute;border-radius:50%;filter:blur(120px);opacity:.10;animation:drift 12s ease-in-out infinite alternate}
+    .blob-1{width:600px;height:600px;background:#4f8ef7;top:-200px;left:-100px}
+    .blob-2{width:500px;height:500px;background:#a78bfa;bottom:-150px;right:-100px;animation-delay:4s}
+    .blob-3{width:350px;height:350px;background:#34d399;top:40%;left:50%;transform:translate(-50%,-50%);animation-delay:8s}
+    @keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(30px,20px) scale(1.05)}}
+
+    nav{position:fixed;top:0;left:0;right:0;z-index:200;height:var(--nav-h);display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:rgba(10,15,30,.75);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+    .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;letter-spacing:-.03em;text-decoration:none;color:var(--text)}
+    .logo span{color:var(--accent)}
+    .nav-right{display:flex;align-items:center;gap:14px}
+    .nav-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:.85rem;color:#fff;flex-shrink:0}
+    .theme-toggle{width:44px;height:24px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface2);cursor:pointer;position:relative;transition:all .3s;padding:0}
+    .theme-knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--accent);transition:transform .3s;display:flex;align-items:center;justify-content:center;font-size:10px;line-height:1}
+    body.light .theme-knob{transform:translateX(20px)}
+
+    .sidebar{position:fixed;top:var(--nav-h);left:0;bottom:0;width:var(--sidebar-w);background:rgba(10,15,30,.8);backdrop-filter:blur(20px);border-right:1px solid var(--border);padding:20px 12px;overflow-y:auto;z-index:100}
+    .sidebar-section{margin-bottom:28px}
+    .sidebar-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:0 10px;margin-bottom:6px}
+    .nav-link{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;text-decoration:none;color:var(--muted);font-size:.875rem;font-weight:500;transition:all .18s}
+    .nav-link:hover{background:var(--surface2);color:var(--text)}
+    .nav-link.active{background:rgba(79,142,247,.15);color:var(--accent);font-weight:600}
+    .nav-link .icon{font-size:1rem;flex-shrink:0;width:20px;text-align:center}
+    .nav-badge{margin-left:auto;background:var(--accent);color:#fff;font-size:.65rem;font-weight:700;border-radius:100px;padding:2px 7px}
+
+    .main{margin-top:var(--nav-h);margin-left:var(--sidebar-w);padding:32px 36px;position:relative;z-index:1}
+
+    /* Welcome */
+    .welcome-banner{background:linear-gradient(135deg,rgba(79,142,247,.2),rgba(167,139,250,.15));border:1px solid var(--border);border-radius:16px;padding:28px 32px;display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:24px;position:relative;overflow:hidden;animation:fadeUp .4s ease both}
+    .welcome-banner::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='30' cy='30' r='20' fill='none' stroke='%234f8ef7' stroke-opacity='0.05'/%3E%3C/svg%3E");pointer-events:none}
+    .welcome-text{position:relative;z-index:1}
+    .welcome-text h2{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;letter-spacing:-.02em;margin-bottom:4px}
+    .welcome-text p{color:var(--muted);font-size:.9rem}
+    .welcome-actions{display:flex;gap:10px;position:relative;z-index:1;flex-shrink:0;flex-wrap:wrap}
+
+    /* Buttons */
+    .btn{display:inline-flex;align-items:center;gap:7px;padding:10px 20px;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:.875rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;text-decoration:none;white-space:nowrap}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-primary:hover{background:#3b7de8;transform:translateY(-1px);box-shadow:0 8px 24px rgba(79,142,247,.35)}
+    .btn-ghost{background:transparent;color:var(--text);border:1.5px solid var(--border)}
+    .btn-ghost:hover{background:var(--surface2);border-color:var(--accent)}
+    .btn-sm{padding:7px 15px;font-size:.82rem}
+
+    /* Stats */
+    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;animation:fadeUp .4s .06s ease both}
+    .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;transition:transform .2s,box-shadow .2s}
+    .stat-card:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.2)}
+    .stat-icon{font-size:1.4rem;margin-bottom:8px}
+    .stat-val{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;background:linear-gradient(120deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+    .stat-lbl{font-size:.72rem;color:var(--muted);margin-top:2px}
+
+    /* Two-col */
+    .dash-cols{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:20px}
+    .card:last-child{margin-bottom:0}
+    .card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+    .card-hdr h3{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:800;display:flex;align-items:center;gap:7px}
+    .card-hdr a{font-size:.78rem;color:var(--accent);text-decoration:none;font-weight:600}
+    .card-hdr a:hover{text-decoration:underline}
+
+    /* Skeletons */
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    .skel{background:linear-gradient(90deg,var(--surface2) 25%,rgba(79,142,247,.06) 50%,var(--surface2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+    /* Match card */
+    .match-card{display:flex;align-items:flex-start;gap:12px;padding:13px 0;border-bottom:1px solid var(--border);text-decoration:none;color:inherit;transition:all .18s;cursor:pointer}
+    .match-card:last-child{border-bottom:none;padding-bottom:0}
+    .match-card:hover .match-title{color:var(--accent)}
+    .match-logo{width:40px;height:40px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:.95rem;flex-shrink:0}
+    .match-info{flex:1;min-width:0}
+    .match-title{font-weight:700;font-size:.875rem;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:color .15s}
+    .match-company{font-size:.77rem;color:var(--muted);margin-bottom:5px}
+    .match-tags{display:flex;gap:8px;flex-wrap:wrap}
+    .match-tags span{font-size:.72rem;color:var(--muted)}
+    .match-pct{font-family:'Syne',sans-serif;font-size:.88rem;font-weight:800;flex-shrink:0;padding:3px 10px;border-radius:100px}
+    .pct-h{background:rgba(52,211,153,.15);color:var(--accent3)}
+    .pct-m{background:rgba(251,191,36,.15);color:var(--warn)}
+    .pct-l{background:rgba(248,113,113,.15);color:var(--danger)}
+
+    /* App row */
+    .app-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+    .app-row:last-child{border-bottom:none;padding-bottom:0}
+    .app-logo-sm{width:36px;height:36px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:.82rem;flex-shrink:0}
+    .app-row-info{flex:1;min-width:0}
+    .app-row-title{font-size:.875rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .app-row-company{font-size:.75rem;color:var(--muted)}
+    .abl{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:100px;font-size:.7rem;font-weight:700;flex-shrink:0}
+    .abl-p{background:rgba(251,191,36,.15);color:var(--warn)}
+    .abl-v{background:rgba(79,142,247,.15);color:var(--accent)}
+    .abl-a{background:rgba(52,211,153,.15);color:var(--accent3)}
+    .abl-r{background:rgba(248,113,113,.15);color:var(--danger)}
+
+    /* Profile bar */
+    .profile-bar-wrap{height:8px;border-radius:4px;background:var(--surface2);overflow:hidden;margin-bottom:8px}
+    .profile-bar{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .8s ease}
+    .check-list{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+    .check-item{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--muted)}
+    .check-item.done{color:var(--accent3)}
+    .check-dot{width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0;transition:background .3s}
+    .check-dot.done{background:var(--accent3)}
+
+    /* Saved row */
+    .saved-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+    .saved-row:last-child{border-bottom:none;padding-bottom:0}
+    .saved-info{flex:1;min-width:0}
+    .saved-title{font-size:.86rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .saved-sub{font-size:.75rem;color:var(--muted)}
+
+    /* Tips */
+    .tips-card{background:linear-gradient(135deg,rgba(79,142,247,.1),rgba(167,139,250,.1));border:1px solid rgba(79,142,247,.2);border-radius:14px;padding:20px}
+    .tips-card h3{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:800;margin-bottom:12px}
+    .tip{display:flex;align-items:flex-start;gap:8px;margin-bottom:9px;font-size:.82rem;color:var(--muted);line-height:1.5}
+    .tip:last-child{margin-bottom:0}
+
+    .mini-empty{text-align:center;padding:24px 0;color:var(--muted);font-size:.85rem}
+    .mini-empty .ei{font-size:2rem;opacity:.3;margin-bottom:8px}
+
+    /* Light */
+    body.light{--bg:#f4f7ff;--surface:#ffffff;--surface2:#e8edf8;--accent:#3b7de8;--accent2:#7c3aed;--accent3:#059669;--text:#0f172a;--muted:#64748b;--border:rgba(59,125,232,0.2);--danger:#dc2626;--warn:#d97706}
+    body.light .bg-blobs .blob{opacity:.06}
+    body.light nav{background:rgba(244,247,255,.88) !important}
+    body.light .sidebar{background:rgba(244,247,255,.92)}
+    body.light .welcome-banner{background:linear-gradient(135deg,rgba(59,125,232,.12),rgba(124,58,237,.1))}
+    body.light .tips-card{background:linear-gradient(135deg,rgba(59,125,232,.07),rgba(124,58,237,.07));border-color:rgba(59,125,232,.15)}
+
+    @media(max-width:1100px){.dash-cols{grid-template-columns:1fr}}
+    @media(max-width:900px){.sidebar{display:none}.main{margin-left:0;padding:20px 16px}.stats-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:600px){.welcome-banner{flex-direction:column;align-items:flex-start}.stats-grid{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+<div class="bg-blobs"><div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div></div>
+
+<nav>
+  <a class="logo" href="student_dashboard.html">intern<span>Link</span></a>
+  <div class="nav-right">
+    <button class="theme-toggle" onclick="toggleTheme()"><div class="theme-knob" id="themeKnob">🌙</div></button>
+    <div class="nav-avatar" id="navAvatar">S</div>
+  </div>
+</nav>
+
+<aside class="sidebar">
+  <div class="sidebar-section">
+    <div class="sidebar-label">Menu</div>
+    <a class="nav-link active" href="student_dashboard.html"><span class="icon">🏠</span>Dashboard</a>
+    <a class="nav-link" href="student_profile.html"><span class="icon">👤</span>My Profile</a>
+    <a class="nav-link" href="internships_dash.html"><span class="icon">🔍</span>Browse Internships</a>
+    <a class="nav-link" href="applications.html"><span class="icon">📋</span>My Applications <span class="nav-badge" id="appBadge">0</span></a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Account</div>
+    <a class="nav-link" href="logout.php"><span class="icon">🚪</span>Log Out</a>
+  </div>
+</aside>
+
+<main class="main">
+
+  <!-- Welcome -->
+  <div class="welcome-banner">
+    <div class="welcome-text">
+      <h2>Welcome back, <span id="heroName">Student</span> 👋</h2>
+      <p id="heroSub">Loading your dashboard…</p>
+    </div>
+    <div class="welcome-actions">
+      <a href="internships_dash.html" class="btn btn-primary">🔍 Browse Internships</a>
+      <a href="student_profile.html"  class="btn btn-ghost btn-sm">Complete Profile</a>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-val" id="stTotal">0</div><div class="stat-lbl">Applications</div></div>
+    <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-val" id="stPending" style="-webkit-text-fill-color:var(--warn);background:none;color:var(--warn)">0</div><div class="stat-lbl">Pending</div></div>
+    <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-val" id="stAccepted" style="-webkit-text-fill-color:var(--accent3);background:none;color:var(--accent3)">0</div><div class="stat-lbl">Accepted</div></div>
+    <div class="stat-card"><div class="stat-icon">⚡</div><div class="stat-val" id="stMatch">—</div><div class="stat-lbl">Avg Match %</div></div>
+  </div>
+
+  <div class="dash-cols">
+
+    <!-- Left -->
+    <div>
+      <div class="card">
+        <div class="card-hdr"><h3>🎯 Top Matches For You</h3><a href="internships_dash.html">See all →</a></div>
+        <div id="matchesList">
+          <div class="skel" style="height:60px;margin-bottom:10px"></div>
+          <div class="skel" style="height:60px;margin-bottom:10px"></div>
+          <div class="skel" style="height:60px"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><h3>📋 Recent Applications</h3><a href="applications.html">View all →</a></div>
+        <div id="appsList">
+          <div class="skel" style="height:48px;margin-bottom:8px"></div>
+          <div class="skel" style="height:48px;margin-bottom:8px"></div>
+          <div class="skel" style="height:48px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right -->
+    <div>
+      <div class="card">
+        <div class="card-hdr">
+          <h3>👤 Profile Strength</h3>
+          <span id="profilePct" style="font-family:'Syne',sans-serif;font-size:.9rem;font-weight:800;color:var(--accent)">0%</span>
+        </div>
+        <div class="profile-bar-wrap"><div class="profile-bar" id="profileBar" style="width:0%"></div></div>
+        <p id="profileTip" style="font-size:.78rem;color:var(--muted);margin-top:6px"></p>
+        <div class="check-list" id="checkList"></div>
+        <a href="student_profile.html" class="btn btn-ghost btn-sm" style="margin-top:14px;width:100%;justify-content:center">Edit Profile →</a>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr"><h3>🔖 Saved Internships</h3><a href="internships_dash.html">Browse →</a></div>
+        <div id="savedList">
+          <div class="skel" style="height:40px;margin-bottom:8px"></div>
+          <div class="skel" style="height:40px"></div>
+        </div>
+      </div>
+
+      <div class="tips-card">
+        <h3>💡 Quick Tips</h3>
+        <div class="tip"><span>⚡</span>Add skills to unlock match scores on every internship.</div>
+        <div class="tip"><span>📄</span>Upload your CV so companies can access it instantly.</div>
+        <div class="tip"><span>✍️</span>A cover letter doubles your chances of being noticed.</div>
+        <div class="tip"><span>🌍</span>Set your country so companies nearby can find you.</div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => { applyTheme(); loadDashboard(); });
+
+  function loadDashboard() {
+    Promise.all([
+      fetch('get_profile.php').then(r => r.json()),
+      fetch('get_internships.php').then(r => r.json()),
+      fetch('get_applications.php').then(r => r.json()),
+      fetch('get_saved.php').then(r => r.json()),
+    ]).then(([prof, intern, apps, saved]) => {
+      if (!prof.success) { window.location.href = 'login.html'; return; }
+      renderWelcome(prof);
+      renderStats(apps);
+      renderMatches(intern);
+      renderApps(apps);
+      renderProfile(prof);
+      renderSaved(intern, saved);
+    }).catch(() => {
+      fetch('get_profile.php').then(r=>r.json()).then(d => {
+        if (!d.success) window.location.href = 'login.html';
+        else renderWelcome(d);
+      });
+    });
+  }
+
+  function renderWelcome(d) {
+    const name = d.profile?.first_name || 'Student';
+    document.getElementById('navAvatar').textContent = name[0].toUpperCase();
+    document.getElementById('heroName').textContent  = name;
+  }
+
+  function renderStats(d) {
+    if (!d.success) return;
+    const apps     = d.applications || [];
+    const total    = apps.length;
+    const pending  = apps.filter(a => a.status === 'pending' || a.status === 'viewed').length;
+    const accepted = apps.filter(a => a.status === 'accepted').length;
+    const pcts     = apps.map(a => Number(a.match_percent||0)).filter(n => n > 0);
+    const avg      = pcts.length ? Math.round(pcts.reduce((s,n)=>s+n,0)/pcts.length) : null;
+
+    document.getElementById('stTotal').textContent    = total;
+    document.getElementById('stPending').textContent  = pending;
+    document.getElementById('stAccepted').textContent = accepted;
+    document.getElementById('stMatch').textContent    = avg !== null ? avg + '%' : '—';
+    document.getElementById('appBadge').textContent   = total;
+    document.getElementById('heroSub').innerHTML =
+      total > 0
+        ? `You have <strong>${pending}</strong> pending application${pending!==1?'s':''} and <strong>${accepted}</strong> accepted.`
+        : 'Start browsing internships to find your perfect match!';
+  }
+
+  function renderMatches(d) {
+    const el = document.getElementById('matchesList');
+    if (!d.success || !d.internships?.length) {
+      el.innerHTML = '<div class="mini-empty"><div class="ei">🎯</div>No internships yet. Add your skills for personalized matches.</div>';
+      return;
+    }
+    const top = [...d.internships].sort((a,b)=>(b.match_percent||0)-(a.match_percent||0)).slice(0,5);
+    el.innerHTML = top.map(i => {
+      const pct  = i.match_percent || 0;
+      const cls  = pct>=70?'pct-h':pct>=40?'pct-m':'pct-l';
+      const loc  = [i.wilaya, i.country].filter(Boolean).join(', ') || '—';
+      const paid = i.is_paid==1 ? '💰 Paid' : '🎓 Unpaid';
+      const wt   = (i.work_type||'').toLowerCase()==='remote' ? '🌐 Remote' : '🏢 On-site';
+      return `<a class="match-card" href="internships_dash.html">
+        <div class="match-logo">${esc((i.company_name||'?')[0])}</div>
+        <div class="match-info">
+          <div class="match-title">${esc(i.title)}</div>
+          <div class="match-company">${esc(i.company_name)}</div>
+          <div class="match-tags"><span>📍 ${esc(loc)}</span><span>⏳ ${i.duration_months}mo</span><span>${wt}</span><span>${paid}</span></div>
+        </div>
+        <span class="match-pct ${cls}">${pct}%</span>
+      </a>`;
+    }).join('');
+  }
+
+  function renderApps(d) {
+    const el = document.getElementById('appsList');
+    if (!d.success || !d.applications?.length) {
+      el.innerHTML = '<div class="mini-empty"><div class="ei">📋</div>No applications yet.<br><a href="internships_dash.html" style="color:var(--accent);font-weight:600">Browse internships →</a></div>';
+      return;
+    }
+    const SM = {pending:{c:'abl-p',i:'⏳',l:'Pending'},viewed:{c:'abl-v',i:'👁',l:'Viewed'},accepted:{c:'abl-a',i:'✅',l:'Accepted'},rejected:{c:'abl-r',i:'✗',l:'Rejected'}};
+    el.innerHTML = d.applications.slice(0,5).map(a => {
+      const s = SM[a.status]||SM.pending;
+      return `<div class="app-row">
+        <div class="app-logo-sm">${esc((a.company_name||'?')[0])}</div>
+        <div class="app-row-info">
+          <div class="app-row-title">${esc(a.title)}</div>
+          <div class="app-row-company">${esc(a.company_name)}</div>
+        </div>
+        <span class="abl ${s.c}">${s.i} ${s.l}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function renderProfile(d) {
+    if (!d.success) return;
+    const p = d.profile || {};
+    const items = [
+      {key:'first_name',     label:'Full name'},
+      {key:'university',     label:'University'},
+      {key:'field_of_study', label:'Field of study'},
+      {key:'country',        label:'Country'},
+      {key:'skills',         label:'Skills added'},
+      {key:'bio',            label:'Bio written'},
+      {key:'cv_path',        label:'CV uploaded'},
+    ];
+    const done = items.filter(i => p[i.key] && p[i.key]!=='').length;
+    const pct  = Math.round(done/items.length*100);
+    document.getElementById('profileBar').style.width = pct+'%';
+    document.getElementById('profilePct').textContent = pct+'%';
+    document.getElementById('profileTip').textContent =
+      pct===100 ? '🎉 Your profile is complete!' :
+      pct>=70   ? 'Almost there! Complete profiles get 3× more views.' :
+                  'Complete your profile to unlock better matches.';
+    document.getElementById('checkList').innerHTML = items.map(i => {
+      const ok = !!(p[i.key] && p[i.key]!=='');
+      return `<div class="check-item ${ok?'done':''}"><div class="check-dot ${ok?'done':''}"></div>${esc(i.label)}</div>`;
+    }).join('');
+  }
+
+  function renderSaved(internData, savedData) {
+    const el = document.getElementById('savedList');
+    if (!savedData.success || !savedData.ids?.length) {
+      el.innerHTML = '<div class="mini-empty"><div class="ei">🔖</div>No saved internships yet.</div>';
+      return;
+    }
+    const ids  = new Set(savedData.ids.map(Number));
+    const list = (internData.internships||[]).filter(i=>ids.has(Number(i.id))).slice(0,4);
+    if (!list.length) { el.innerHTML = '<div class="mini-empty"><div class="ei">🔖</div>No saved internships yet.</div>'; return; }
+    el.innerHTML = list.map(i => {
+      const loc = [i.wilaya, i.country].filter(Boolean).join(', ')||'—';
+      return `<div class="saved-row">
+        <div class="saved-info">
+          <div class="saved-title">${esc(i.title)}</div>
+          <div class="saved-sub">${esc(i.company_name)} · ${esc(loc)}</div>
+        </div>
+        <a href="internships_dash.html" class="btn btn-ghost btn-sm" style="padding:4px 10px;font-size:.74rem">View</a>
+      </div>`;
+    }).join('');
+  }
+
+  function applyTheme() {
+    if (localStorage.getItem('il-theme')==='light') {
+      document.body.classList.add('light');
+      document.getElementById('themeKnob').textContent = '☀️';
+    }
+  }
+  function toggleTheme() {
+    const l = document.body.classList.toggle('light');
+    document.getElementById('themeKnob').textContent = l?'☀️':'🌙';
+    localStorage.setItem('il-theme', l?'light':'dark');
+  }
+  function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+</script>
+</body>
+</html>

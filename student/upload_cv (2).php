@@ -13,7 +13,10 @@ if (!isset($_FILES['cv'])) {
 
 $file = $_FILES['cv'];
 
-// Validate type and size
+if ($file['error'] !== UPLOAD_ERR_OK) {
+    echo json_encode(['success' => false, 'message' => 'File upload error.']);
+    exit;
+}
 if ($file['type'] !== 'application/pdf') {
     echo json_encode(['success' => false, 'message' => 'Only PDF files are allowed.']);
     exit;
@@ -26,7 +29,6 @@ if ($file['size'] > 5 * 1024 * 1024) {
 $uploadDir = __DIR__ . '/uploads/cv/';
 if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
 
-// Unique filename per student — overwrites previous
 $filename = 'cv_student_' . $userId . '.pdf';
 $dest     = $uploadDir . $filename;
 
@@ -35,10 +37,8 @@ if (!move_uploaded_file($file['tmp_name'], $dest)) {
     exit;
 }
 
-// Save path in DB
 $cvPath = 'uploads/cv/' . $filename;
 
-// Upsert
 $chk = $pdo->prepare("SELECT id FROM student_profiles WHERE user_id=?");
 $chk->execute([$userId]);
 if ($chk->fetch()) {
@@ -47,4 +47,4 @@ if ($chk->fetch()) {
     $pdo->prepare("INSERT INTO student_profiles (user_id, cv_path) VALUES (?,?)")->execute([$userId, $cvPath]);
 }
 
-echo json_encode(['success' => true, 'message' => 'CV uploaded.', 'path' => $cvPath]);
+echo json_encode(['success' => true, 'message' => 'CV uploaded successfully.', 'path' => $cvPath]);
