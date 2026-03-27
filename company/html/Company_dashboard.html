@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>internLink — Company Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0f1e; --surface: #111827; --surface2: #1a2236; --surface3: #212d45;
+      --accent: #4f8ef7; --accent2: #a78bfa; --accent3: #34d399; --accent4: #fb923c;
+      --text: #f0f4ff; --muted: #8899bb; --border: rgba(79,142,247,0.18);
+      --danger: #f87171; --warning: #facc15;
+      --sidebar-w: 260px;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; display: flex; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; position: fixed; inset: 0 auto 0 0; z-index: 50; overflow-y: auto;
+    }
+    .sidebar-header { padding: 28px 24px 20px; border-bottom: 1px solid var(--border); }
+    .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; letter-spacing: -0.03em; }
+    .logo span { color: var(--accent); }
+    .company-badge { display: flex; align-items: center; gap: 10px; margin-top: 16px; padding: 10px 12px; background: rgba(79,142,247,0.08); border-radius: 10px; border: 1px solid var(--border); }
+    .company-avatar { width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
+    .company-name { font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .company-role { font-size: 0.72rem; color: var(--accent3); font-weight: 500; }
+
+    .nav-section { padding: 16px 12px 8px; }
+    .nav-label { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); padding: 0 12px; margin-bottom: 6px; font-weight: 600; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px;
+      color: var(--muted); text-decoration: none; font-size: 0.875rem; font-weight: 500;
+      transition: all 0.2s; cursor: pointer; border: none; background: none; width: 100%; text-align: left;
+    }
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .nav-item.active { background: rgba(79,142,247,0.12); color: var(--accent); }
+    .nav-item .nav-icon { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
+    .nav-badge { margin-left: auto; background: var(--accent); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 100px; }
+    .nav-badge.warn { background: var(--accent4); }
+
+    .sidebar-footer { margin-top: auto; padding: 16px 12px; border-top: 1px solid var(--border); }
+
+    /* ── Main ── */
+    .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* ── Top bar ── */
+    .topbar {
+      position: sticky; top: 0; z-index: 40;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 40px; background: rgba(10,15,30,0.85); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .page-title { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 700; letter-spacing: -0.02em; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .topbar-btn { padding: 8px 18px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.2s; border: none; }
+    .btn-accent { background: var(--accent); color: #fff; }
+    .btn-accent:hover { background: #3b7de8; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(79,142,247,0.35); }
+    .notif-btn { width: 36px; height: 36px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1rem; position: relative; transition: all 0.2s; }
+    .notif-btn:hover { background: var(--surface2); }
+    .notif-dot { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent4); border: 2px solid var(--bg); }
+
+    /* ── Content ── */
+    .content { padding: 36px 40px; flex: 1; }
+
+    /* ── Welcome banner ── */
+    .welcome-banner {
+      background: linear-gradient(135deg, rgba(79,142,247,0.12) 0%, rgba(167,139,250,0.08) 100%);
+      border: 1px solid var(--border); border-radius: 16px; padding: 28px 32px;
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px;
+      position: relative; overflow: hidden;
+    }
+    .welcome-banner::before { content: ''; position: absolute; right: -40px; top: -40px; width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle, rgba(79,142,247,0.12), transparent 70%); }
+    .welcome-text h2 { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 4px; }
+    .welcome-text p { color: var(--muted); font-size: 0.9rem; }
+    .welcome-actions { display: flex; gap: 10px; position: relative; z-index: 1; }
+
+    /* ── Stats grid ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      padding: 22px 24px; transition: all 0.25s; position: relative; overflow: hidden;
+    }
+    .stat-card:hover { border-color: rgba(79,142,247,0.35); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+    .stat-card::after { content: ''; position: absolute; top: 0; right: 0; width: 60px; height: 60px; border-radius: 0 14px 0 60px; opacity: 0.08; }
+    .stat-card.blue::after { background: var(--accent); }
+    .stat-card.purple::after { background: var(--accent2); }
+    .stat-card.green::after { background: var(--accent3); }
+    .stat-card.orange::after { background: var(--accent4); }
+    .stat-icon { font-size: 1.3rem; margin-bottom: 12px; }
+    .stat-num { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 2px; }
+    .stat-card.blue .stat-num { color: var(--accent); }
+    .stat-card.purple .stat-num { color: var(--accent2); }
+    .stat-card.green .stat-num { color: var(--accent3); }
+    .stat-card.orange .stat-num { color: var(--accent4); }
+    .stat-lbl { font-size: 0.8rem; color: var(--muted); }
+    .stat-delta { font-size: 0.75rem; color: var(--accent3); margin-top: 8px; }
+
+    /* ── Two-col layout ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+    .three-col { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
+
+    /* ── Card ── */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .card-head { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px 16px; border-bottom: 1px solid var(--border); }
+    .card-title { font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 700; letter-spacing: -0.01em; }
+    .card-link { font-size: 0.8rem; color: var(--accent); text-decoration: none; font-weight: 500; }
+    .card-link:hover { text-decoration: underline; }
+    .card-body { padding: 16px 24px; }
+
+    /* ── Application rows ── */
+    .app-row {
+      display: flex; align-items: center; gap: 14px; padding: 12px 0;
+      border-bottom: 1px solid rgba(79,142,247,0.07); transition: background 0.15s;
+    }
+    .app-row:last-child { border-bottom: none; }
+    .app-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; flex-shrink: 0; }
+    .app-info { flex: 1; min-width: 0; }
+    .app-name { font-size: 0.875rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .app-meta { font-size: 0.75rem; color: var(--muted); }
+    .app-time { font-size: 0.72rem; color: var(--muted); flex-shrink: 0; }
+    .status-pill { font-size: 0.7rem; font-weight: 600; padding: 3px 10px; border-radius: 100px; flex-shrink: 0; }
+    .pill-wait  { background: rgba(250,204,21,0.12);  color: var(--warning); border: 1px solid rgba(250,204,21,0.2); }
+    .pill-ok    { background: rgba(52,211,153,0.1);   color: var(--accent3); border: 1px solid rgba(52,211,153,0.2); }
+    .pill-no    { background: rgba(248,113,113,0.1);  color: var(--danger);  border: 1px solid rgba(248,113,113,0.2); }
+
+    /* ── Offer mini cards ── */
+    .offer-mini { padding: 14px 0; border-bottom: 1px solid rgba(79,142,247,0.07); }
+    .offer-mini:last-child { border-bottom: none; }
+    .offer-mini-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .offer-mini-title { font-size: 0.875rem; font-weight: 600; }
+    .offer-mini-meta { font-size: 0.75rem; color: var(--muted); display: flex; gap: 12px; }
+    .offer-mini-meta span::before { margin-right: 4px; }
+    .offer-apps { font-size: 0.75rem; color: var(--accent); font-weight: 600; }
+
+    /* ── Activity feed ── */
+    .activity-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(79,142,247,0.07); }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
+    .activity-text { font-size: 0.83rem; color: var(--muted); line-height: 1.5; }
+    .activity-text strong { color: var(--text); font-weight: 500; }
+    .activity-time { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+    /* ── Profile completion ── */
+    .profile-complete { padding: 20px 24px; }
+    .progress-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .progress-pct { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--accent3); }
+    .progress-bar-bg { height: 6px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent3), var(--accent)); border-radius: 4px; transition: width 1s ease; }
+    .progress-items { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+    .progress-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; }
+    .progress-item .check { width: 16px; height: 16px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; flex-shrink: 0; }
+    .check.done { background: rgba(52,211,153,0.15); color: var(--accent3); }
+    .check.todo { background: var(--surface2); color: var(--muted); }
+    .progress-item .item-lbl { color: var(--muted); }
+    .progress-item.done-item .item-lbl { color: var(--text); }
+
+    /* ── Light mode ── */
+    body.light {
+      --bg:#f4f7ff; --surface:#ffffff; --surface2:#e8edf8; --surface3:#dde4f5;
+      --accent:#3b7de8; --accent2:#7c3aed; --accent3:#059669; --accent4:#ea580c;
+      --text:#0f172a; --muted:#64748b; --border:rgba(59,125,232,0.2);
+      --danger:#dc2626; --warning:#d97706;
+    }
+    body.light .topbar { background: rgba(244,247,255,0.9); }
+    body.light .sidebar { background: var(--surface); }
+
+    /* ── Theme toggle ── */
+    .theme-toggle { width: 44px; height: 24px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface2); cursor: pointer; position: relative; transition: all 0.3s; padding: 0; }
+    .theme-toggle-knob { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); transition: transform 0.3s; display: flex; align-items: center; justify-content: center; font-size: 10px; line-height: 1; }
+    body.light .theme-toggle-knob { transform: translateX(20px); }
+
+    @media (max-width: 1100px) { .stats-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 900px) {
+      .sidebar { transform: translateX(-100%); }
+      .main { margin-left: 0; }
+      .two-col, .three-col { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">intern<span>Link</span></div>
+    <div class="company-badge">
+      <div class="company-avatar" id="sidebarAvatar">TC</div>
+      <div>
+        <div class="company-name" id="sidebarName">TechCorp Inc.</div>
+        <div class="company-role">Company Account</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Main</div>
+    <a class="nav-item active" href="company_dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a class="nav-item" href="company_offers.html"><span class="nav-icon">📋</span> Internship Offers <span class="nav-badge" id="offersCount">4</span></a>
+    <a class="nav-item" href="company_applications.html"><span class="nav-icon">👥</span> Applications <span class="nav-badge warn" id="appsCount">7</span></a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Account</div>
+    <a class="nav-item" href="company_profile.html"><span class="nav-icon">🏢</span> Company Profile</a>
+    <a class="nav-item" href="#"><span class="nav-icon">🔔</span> Notifications</a>
+    <a class="nav-item" href="#"><span class="nav-icon">⚙️</span> Settings</a>
+  </div>
+
+  <div class="sidebar-footer">
+    <a class="nav-item" href="../../phpsecure/logout.php" style="color: var(--danger)"><span class="nav-icon">🚪</span> Log Out</a>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <div class="topbar">
+    <div class="page-title">Dashboard</div>
+    <div class="topbar-right">
+      <button class="theme-toggle" onclick="toggleTheme()"><div class="theme-toggle-knob" id="themeKnob">🌙</div></button>
+      <div class="notif-btn">🔔<div class="notif-dot"></div></div>
+      <a href="company_offers.html?new=1" class="topbar-btn btn-accent">+ Post Offer</a>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Welcome -->
+    <div class="welcome-banner">
+      <div class="welcome-text">
+        <h2>Welcome back, <span id="welcomeName">TechCorp</span> 👋</h2>
+        <p>You have <strong id="pendingCount" style="color:var(--warning)">7 pending applications</strong> waiting for your review.</p>
+      </div>
+      <div class="welcome-actions">
+        <a href="company_applications.html" class="topbar-btn btn-accent">Review Applications</a>
+        <a href="company_offers.html" class="topbar-btn" style="background:var(--surface2);border:1px solid var(--border);">Manage Offers</a>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card blue">
+        <div class="stat-icon">📋</div>
+        <div class="stat-num" id="statOffers">4</div>
+        <div class="stat-lbl">Active Offers</div>
+        <div class="stat-delta">↑ 1 this month</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-icon">📥</div>
+        <div class="stat-num" id="statApps">24</div>
+        <div class="stat-lbl">Total Applications</div>
+        <div class="stat-delta">↑ 8 this week</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-num" id="statPending">7</div>
+        <div class="stat-lbl">Awaiting Review</div>
+        <div class="stat-delta" style="color:var(--warning)">Needs attention</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon">✅</div>
+        <div class="stat-num" id="statAccepted">11</div>
+        <div class="stat-lbl">Accepted</div>
+        <div class="stat-delta">↑ 3 this month</div>
+      </div>
+    </div>
+
+    <!-- Recent applications + Active offers -->
+    <div class="two-col" style="margin-bottom:20px">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">Recent Applications</div>
+          <a href="company_applications.html" class="card-link">View all →</a>
+        </div>
+        <div class="card-body" id="recentApps">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">Active Offers</div>
+          <a href="company_offers.html" class="card-link">Manage →</a>
+        </div>
+        <div class="card-body" id="activeOffers">
+          <!-- populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity + Profile completion -->
+    <div class="three-col">
+      <div class="card">
+        <div class="card-head"><div class="card-title">Recent Activity</div></div>
+        <div class="card-body" id="activityFeed"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div class="card-title">Profile Completion</div></div>
+        <div class="profile-complete">
+          <div class="progress-row">
+            <div>
+              <div style="font-size:0.8rem;color:var(--muted);margin-bottom:2px">Profile strength</div>
+              <div class="progress-pct" id="profilePct">75%</div>
+            </div>
+            <a href="company_profile.html" style="font-size:0.8rem;color:var(--accent);text-decoration:none;font-weight:500">Complete →</a>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="profileBar" style="width:75%"></div>
+          </div>
+          <div class="progress-items" id="profileItems"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ── Status config ────────────────────────────────────────────────────────
+  const statusMap = {
+    waiting:  { cls: 'pill-wait', label: 'Waiting'  },
+    accepted: { cls: 'pill-ok',   label: 'Accepted' },
+    rejected: { cls: 'pill-no',   label: 'Rejected' },
+  };
+
+  // ── Avatar colour palette (cycles by index) ───────────────────────────
+  const avatarColors = ['#4f8ef7','#34d399','#a78bfa','#fb923c','#f472b6','#38bdf8','#fbbf24'];
+  function avatarColor(i) { return avatarColors[i % avatarColors.length]; }
+
+  // ── Relative time helper ─────────────────────────────────────────────────
+  function relativeTime(dateStr) {
+    const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+    if (diff < 60)   return 'just now';
+    if (diff < 3600) return Math.floor(diff / 60)   + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    return Math.floor(diff / 86400) + 'd ago';
+  }
+
+  // ── Render helpers ────────────────────────────────────────────────────────
+  function renderRecentApps(apps) {
+    const el = document.getElementById('recentApps');
+    if (!apps.length) { el.innerHTML = '<p style="color:var(--muted);font-size:.85rem;padding:12px 0">No applications yet.</p>'; return; }
+    el.innerHTML = apps.map((a, i) => {
+      const initials = (a.first_name[0] + a.last_name[0]).toUpperCase();
+      const color    = avatarColor(i);
+      return `
+        <div class="app-row">
+          <div class="app-avatar" style="background:linear-gradient(135deg,${color},${color}99)">${initials}</div>
+          <div class="app-info">
+            <div class="app-name">${a.first_name} ${a.last_name}</div>
+            <div class="app-meta">${a.offer_title}</div>
+          </div>
+          <span class="status-pill ${statusMap[a.status].cls}">${statusMap[a.status].label}</span>
+          <span class="app-time">${relativeTime(a.applied_at)}</span>
+        </div>`;
+    }).join('');
+  }
+
+  function renderActiveOffers(offers) {
+    const el = document.getElementById('activeOffers');
+    if (!offers.length) { el.innerHTML = '<p style="color:var(--muted);font-size:.85rem;padding:12px 0">No active offers.</p>'; return; }
+    el.innerHTML = offers.map(o => `
+      <div class="offer-mini">
+        <div class="offer-mini-top">
+          <div class="offer-mini-title">${o.title}</div>
+          <span class="offer-apps">${o.applicant_count} applicant${o.applicant_count != 1 ? 's' : ''}</span>
+        </div>
+        <div class="offer-mini-meta">
+          <span>📚 ${o.field}</span>
+          <span>📍 ${o.location}</span>
+        </div>
+      </div>`).join('');
+  }
+
+  function renderActivityFeed(apps) {
+    const el = document.getElementById('activityFeed');
+    if (!apps.length) { el.innerHTML = '<p style="color:var(--muted);font-size:.85rem;padding:12px 0">No recent activity.</p>'; return; }
+    el.innerHTML = apps.map((a, i) => {
+      const color = avatarColor(i);
+      return `
+        <div class="activity-item">
+          <div class="activity-dot" style="background:${color}"></div>
+          <div>
+            <div class="activity-text"><strong>${a.first_name} ${a.last_name}</strong> applied to ${a.offer_title}</div>
+            <div class="activity-time">${relativeTime(a.applied_at)}</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderProfileCompletion(completion) {
+    document.getElementById('profilePct').textContent = completion.percentage + '%';
+    document.getElementById('profileBar').style.width  = completion.percentage + '%';
+    const labels = {
+      company_name: 'Company name & country',
+      sector:       'Activity sector',
+      description:  'Company description',
+      avatar:       'Logo / profile image',
+    };
+    document.getElementById('profileItems').innerHTML = Object.entries(completion.checks).map(([key, done]) => `
+      <div class="progress-item ${done ? 'done-item' : ''}">
+        <div class="check ${done ? 'done' : 'todo'}">${done ? '✓' : '○'}</div>
+        <span class="item-lbl">${labels[key] || key}</span>
+      </div>`).join('');
+  }
+
+  // ── Load dashboard data from PHP ──────────────────────────────────────────
+  function loadDashboard() {
+    fetch('../php/get_company_data.php')
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success) {
+          // Session expired — redirect to login
+          window.location.href = '../../../html/login.html';
+          return;
+        }
+
+        // ── Sidebar & header ────────────────────────────────────────────
+        const name = data.profile.company_name;
+        document.getElementById('sidebarName').textContent  = name;
+        document.getElementById('sidebarAvatar').textContent = data.profile.initials;
+        document.getElementById('welcomeName').textContent   = name.split(' ')[0];
+
+        // ── Stats ────────────────────────────────────────────────────────
+        document.getElementById('statOffers').textContent   = data.stats.active_offers;
+        document.getElementById('statApps').textContent     = data.stats.total_apps;
+        document.getElementById('statPending').textContent  = data.stats.pending_apps;
+        document.getElementById('statAccepted').textContent = data.stats.accepted_apps;
+        document.getElementById('offersCount').textContent  = data.stats.active_offers;
+        document.getElementById('appsCount').textContent    = data.stats.pending_apps;
+
+        // ── Pending banner ───────────────────────────────────────────────
+        const pending = data.stats.pending_apps;
+        document.getElementById('pendingCount').textContent =
+          pending + ' pending application' + (pending !== 1 ? 's' : '');
+
+        // ── Sections ─────────────────────────────────────────────────────
+        renderRecentApps(data.recent_apps);
+        renderActiveOffers(data.active_offers);
+        renderActivityFeed(data.recent_apps);
+        renderProfileCompletion(data.profile_completion);
+      })
+      .catch(() => {
+        console.error('Failed to load dashboard data.');
+      });
+  }
+
+  loadDashboard();
+
+  // ── Theme ───────────────────────────────────────────────────────────────
+  (function() {
+    if (localStorage.getItem('il-theme') === 'light') {
+      document.body.classList.add('light');
+      document.getElementById('themeKnob').textContent = '☀️';
+    }
+  })();
+  function toggleTheme() {
+    const l = document.body.classList.toggle('light');
+    document.getElementById('themeKnob').textContent = l ? '☀️' : '🌙';
+    localStorage.setItem('il-theme', l ? 'light' : 'dark');
+  }
+</script>
+</body>
+</html>

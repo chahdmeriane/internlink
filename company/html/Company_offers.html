@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>internLink — Internship Offers</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0f1e; --surface: #111827; --surface2: #1a2236; --surface3: #212d45;
+      --accent: #4f8ef7; --accent2: #a78bfa; --accent3: #34d399; --accent4: #fb923c;
+      --text: #f0f4ff; --muted: #8899bb; --border: rgba(79,142,247,0.18);
+      --danger: #f87171; --warning: #facc15; --sidebar-w: 260px;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; display: flex; }
+
+    /* Sidebar */
+    .sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; inset: 0 auto 0 0; z-index: 50; overflow-y: auto; }
+    .sidebar-header { padding: 28px 24px 20px; border-bottom: 1px solid var(--border); }
+    .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; letter-spacing: -0.03em; }
+    .logo span { color: var(--accent); }
+    .company-badge { display: flex; align-items: center; gap: 10px; margin-top: 16px; padding: 10px 12px; background: rgba(79,142,247,0.08); border-radius: 10px; border: 1px solid var(--border); }
+    .cab { width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg,var(--accent),var(--accent2)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
+    .cn { font-size: 0.85rem; font-weight: 600; }
+    .cr { font-size: 0.72rem; color: var(--accent3); }
+    .nav-section { padding: 16px 12px 8px; }
+    .nav-label { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); padding: 0 12px; margin-bottom: 6px; font-weight: 600; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: var(--muted); text-decoration: none; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; }
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .nav-item.active { background: rgba(79,142,247,0.12); color: var(--accent); }
+    .nav-icon { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
+    .nav-badge { margin-left: auto; background: var(--accent); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 100px; }
+    .nav-badge.warn { background: var(--accent4); }
+    .sidebar-footer { margin-top: auto; padding: 16px 12px; border-top: 1px solid var(--border); }
+
+    /* Main */
+    .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
+    .topbar { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; padding: 16px 40px; background: rgba(10,15,30,0.85); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
+    .page-title { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 700; letter-spacing: -0.02em; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .btn-accent { padding: 9px 20px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-family: 'DM Sans',sans-serif; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+    .btn-accent:hover { background: #3b7de8; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(79,142,247,0.35); }
+    .theme-toggle { width: 44px; height: 24px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface2); cursor: pointer; position: relative; padding: 0; }
+    .theme-toggle-knob { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); transition: transform 0.3s; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+    body.light .theme-toggle-knob { transform: translateX(20px); }
+
+    .content { padding: 32px 40px; flex: 1; }
+
+    /* Filter bar */
+    .filter-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; flex-wrap: wrap; }
+    .search-wrap { position: relative; flex: 1; min-width: 200px; }
+    .search-wrap input { width: 100%; padding: 10px 12px 10px 38px; background: var(--surface); border: 1.5px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'DM Sans',sans-serif; font-size: 0.875rem; outline: none; transition: all 0.2s; }
+    .search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,142,247,0.12); }
+    .search-wrap .si { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 0.85rem; pointer-events: none; }
+    .filter-select { padding: 10px 14px; background: var(--surface); border: 1.5px solid var(--border); border-radius: 10px; color: var(--muted); font-family: 'DM Sans',sans-serif; font-size: 0.875rem; outline: none; cursor: pointer; transition: all 0.2s; }
+    .filter-select:focus { border-color: var(--accent); color: var(--text); }
+
+    /* Offers grid */
+    .offers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 18px; }
+    .offer-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      overflow: hidden; transition: all 0.25s; display: flex; flex-direction: column;
+    }
+    .offer-card:hover { border-color: rgba(79,142,247,0.35); transform: translateY(-2px); box-shadow: 0 10px 36px rgba(0,0,0,0.2); }
+    .offer-card-top { padding: 22px 22px 16px; flex: 1; }
+    .offer-card-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+    .offer-field-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(79,142,247,0.1); color: var(--accent); border-radius: 6px; padding: 4px 10px; font-size: 0.72rem; font-weight: 600; }
+    .offer-status-pill { font-size: 0.7rem; font-weight: 600; padding: 3px 10px; border-radius: 100px; }
+    .pill-active { background: rgba(52,211,153,0.12); color: var(--accent3); border: 1px solid rgba(52,211,153,0.25); }
+    .pill-closed { background: rgba(248,113,113,0.1); color: var(--danger); border: 1px solid rgba(248,113,113,0.2); }
+    .offer-title { font-family: 'Syne',sans-serif; font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
+    .offer-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+    .offer-meta-item { display: flex; align-items: center; gap: 5px; font-size: 0.78rem; color: var(--muted); }
+    .offer-desc { font-size: 0.83rem; color: var(--muted); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .offer-card-foot { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.015); }
+    .offer-apps-count { font-size: 0.8rem; color: var(--accent); font-weight: 600; }
+    .offer-actions { display: flex; gap: 8px; }
+    .btn-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; cursor: pointer; border: 1.5px solid var(--border); background: var(--surface2); transition: all 0.2s; }
+    .btn-icon:hover { background: var(--surface3); border-color: rgba(255,255,255,0.2); }
+    .btn-icon.del:hover { background: rgba(248,113,113,0.12); border-color: rgba(248,113,113,0.3); }
+    .btn-icon.view-apps { color: var(--accent); }
+
+    /* Empty state */
+    .empty-state { text-align: center; padding: 80px 40px; }
+    .empty-icon { font-size: 3rem; margin-bottom: 16px; }
+    .empty-title { font-family: 'Syne',sans-serif; font-size: 1.3rem; font-weight: 700; margin-bottom: 8px; }
+    .empty-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 28px; }
+
+    /* ── MODAL ── */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto;
+      animation: slideIn 0.3s ease both;
+    }
+    @keyframes slideIn { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 22px 26px 18px; border-bottom: 1px solid var(--border); }
+    .modal-title { font-family: 'Syne',sans-serif; font-size: 1.1rem; font-weight: 800; letter-spacing: -0.02em; }
+    .modal-close { width: 32px; height: 32px; border-radius: 8px; background: var(--surface2); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: all 0.2s; }
+    .modal-close:hover { background: var(--surface3); }
+    .modal-body { padding: 24px 26px; }
+    .modal-foot { padding: 16px 26px 22px; display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid var(--border); }
+
+    label { display: block; font-size: 0.8rem; font-weight: 500; color: var(--muted); margin-bottom: 7px; }
+    .field { margin-bottom: 18px; }
+    .input-wrap { position: relative; }
+    .input-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 0.85rem; pointer-events: none; }
+    input[type="text"], input[type="number"], select, textarea {
+      width: 100%; padding: 11px 12px 11px 40px; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'DM Sans',sans-serif; font-size: 0.875rem; outline: none; transition: all 0.2s; -webkit-appearance: none;
+    }
+    textarea { padding: 12px; resize: vertical; min-height: 90px; }
+    input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.6; }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); background: rgba(79,142,247,0.05); box-shadow: 0 0 0 3px rgba(79,142,247,0.12); }
+    select { cursor: pointer; }
+    select option { background: var(--surface); }
+    .no-icon { padding-left: 12px !important; }
+    .form-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .btn-save { padding: 11px 28px; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-family: 'DM Sans',sans-serif; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-save:hover { background: #3b7de8; transform: translateY(-1px); }
+    .btn-cancel-m { padding: 11px 22px; background: transparent; border: 1.5px solid var(--border); border-radius: 10px; color: var(--muted); font-family: 'DM Sans',sans-serif; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; }
+    .btn-cancel-m:hover { background: var(--surface2); color: var(--text); }
+
+    .msg { display: none; border-radius: 8px; padding: 10px 14px; font-size: 0.83rem; margin-bottom: 14px; }
+    .msg.show { display: block; }
+    .msg.error { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); color: var(--danger); }
+
+    /* Delete confirm modal */
+    .del-modal { max-width: 400px; }
+
+    body.light { --bg:#f4f7ff; --surface:#ffffff; --surface2:#e8edf8; --surface3:#dde4f5; --accent:#3b7de8; --accent2:#7c3aed; --accent3:#059669; --text:#0f172a; --muted:#64748b; --border:rgba(59,125,232,0.2); --danger:#dc2626; --warning:#d97706; }
+    body.light .topbar { background: rgba(244,247,255,0.9); }
+    body.light input, body.light select, body.light textarea { background: var(--surface) !important; color: var(--text) !important; }
+    body.light .search-wrap input { background: var(--surface) !important; }
+    body.light .filter-select { background: var(--surface) !important; color: var(--text) !important; }
+
+    @media (max-width: 700px) { .offers-grid { grid-template-columns: 1fr; } .content { padding: 24px 16px; } .topbar { padding: 14px 20px; } .form-row2 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">intern<span>Link</span></div>
+    <div class="company-badge"><div class="cab">TC</div><div><div class="cn">TechCorp Inc.</div><div class="cr">Company Account</div></div></div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Main</div>
+    <a class="nav-item" href="company_dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a class="nav-item active" href="company_offers.html"><span class="nav-icon">📋</span> Internship Offers <span class="nav-badge" id="sideCount">4</span></a>
+    <a class="nav-item" href="company_applications.html"><span class="nav-icon">👥</span> Applications <span class="nav-badge warn">7</span></a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Account</div>
+    <a class="nav-item" href="company_profile.html"><span class="nav-icon">🏢</span> Company Profile</a>
+    <a class="nav-item" href="#"><span class="nav-icon">🔔</span> Notifications</a>
+    <a class="nav-item" href="#"><span class="nav-icon">⚙️</span> Settings</a>
+  </div>
+  <div class="sidebar-footer"><a class="nav-item" href="../../phpsecure/logout.php" style="color:var(--danger)"><span class="nav-icon">🚪</span> Log Out</a></div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <div class="topbar">
+    <div class="page-title">Internship Offers</div>
+    <div class="topbar-right">
+      <button class="theme-toggle" onclick="toggleTheme()"><div class="theme-toggle-knob" id="themeKnob">🌙</div></button>
+      <button class="btn-accent" onclick="openModal()">+ Post New Offer</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <div class="search-wrap"><span class="si">🔍</span><input type="text" id="searchInput" placeholder="Search offers…" oninput="renderOffers()"/></div>
+      <select class="filter-select" id="fieldFilter" onchange="renderOffers()">
+        <option value="">All fields</option>
+        <option>Web Development</option>
+        <option>Data Science</option>
+        <option>Engineering</option>
+        <option>Design</option>
+        <option>Marketing</option>
+        <option>Finance</option>
+        <option>Other</option>
+      </select>
+      <select class="filter-select" id="statusFilter" onchange="renderOffers()">
+        <option value="">All statuses</option>
+        <option value="active">Active</option>
+        <option value="closed">Closed</option>
+      </select>
+    </div>
+
+    <!-- Grid -->
+    <div class="offers-grid" id="offersGrid"></div>
+    <div id="emptyState" class="empty-state" style="display:none">
+      <div class="empty-icon">📋</div>
+      <div class="empty-title">No offers found</div>
+      <p class="empty-sub">Post your first internship offer to start receiving applications from students worldwide.</p>
+      <button class="btn-accent" onclick="openModal()">+ Post First Offer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add / Edit Modal -->
+<div class="modal-overlay" id="offerModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="modalTitle">Post New Offer</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="msg error" id="modalErr"></div>
+      <div class="field">
+        <label>Offer Title *</label>
+        <div class="input-wrap"><span class="input-icon">💼</span><input type="text" id="fTitle" placeholder="e.g. Frontend Developer Intern"/></div>
+      </div>
+      <div class="form-row2">
+        <div class="field">
+          <label>Field / Domain *</label>
+          <div class="input-wrap"><span class="input-icon">📚</span>
+            <select id="fField">
+              <option value="" disabled selected>Select field…</option>
+              <option>Web Development</option>
+              <option>Data Science</option>
+              <option>Engineering</option>
+              <option>Design</option>
+              <option>Marketing</option>
+              <option>Finance</option>
+              <option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Location *</label>
+          <div class="input-wrap"><span class="input-icon">📍</span><input type="text" id="fLocation" placeholder="e.g. Paris / Remote"/></div>
+        </div>
+      </div>
+      <div class="form-row2">
+        <div class="field">
+          <label>Duration *</label>
+          <div class="input-wrap"><span class="input-icon">⏱</span>
+            <select id="fDuration">
+              <option value="" disabled selected>Select…</option>
+              <option>1 month</option>
+              <option>2 months</option>
+              <option>3 months</option>
+              <option>4 months</option>
+              <option>5 months</option>
+              <option>6 months</option>
+              <option>6+ months</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <div class="input-wrap"><span class="input-icon">🟢</span>
+            <select id="fStatus">
+              <option value="active">Active</option>
+              <option value="closed">Closed</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Required Skills (comma-separated)</label>
+        <div class="input-wrap"><span class="input-icon">⚡</span><input type="text" id="fSkills" placeholder="e.g. React, Node.js, SQL…"/></div>
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <textarea id="fDesc" class="no-icon" placeholder="Describe the role, responsibilities, and what the student will learn…"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel-m" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveOffer()">Save Offer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="delModal">
+  <div class="modal del-modal">
+    <div class="modal-head">
+      <div class="modal-title" style="color:var(--danger)">Delete Offer</div>
+      <button class="modal-close" onclick="closeDelModal()">✕</button>
+    </div>
+    <div class="modal-body" style="text-align:center;padding:32px 26px">
+      <div style="font-size:2.5rem;margin-bottom:16px">🗑️</div>
+      <p style="font-size:0.9rem;color:var(--muted);line-height:1.6">Are you sure you want to delete <strong id="delTitle" style="color:var(--text)"></strong>? All associated applications will also be removed.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel-m" onclick="closeDelModal()">Cancel</button>
+      <button style="padding:11px 24px;background:var(--danger);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── State ──────────────────────────────────────────────────────────────────
+  let offers     = [];   // filled by loadOffers()
+  let editingId  = null;
+  let deletingId = null;
+
+  // ── Load offers from PHP ───────────────────────────────────────────────────
+  function loadOffers() {
+    fetch('../php/get_offers.php')
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success) { window.location.href = '../../../html/login.html'; return; }
+        offers = data.offers.map(o => ({
+          id:       parseInt(o.id),
+          title:    o.title,
+          field:    o.field,
+          location: o.location,
+          duration: o.duration,
+          status:   o.status,
+          skills:   o.skills   || '',
+          desc:     o.description || '',
+          apps:     parseInt(o.applicant_count),
+        }));
+        renderOffers();
+      })
+      .catch(() => console.error('Failed to load offers.'));
+  }
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+  function renderOffers() {
+    const q      = document.getElementById('searchInput').value.toLowerCase();
+    const field  = document.getElementById('fieldFilter').value;
+    const status = document.getElementById('statusFilter').value;
+
+    const filtered = offers.filter(o =>
+      (!q      || o.title.toLowerCase().includes(q) || o.field.toLowerCase().includes(q)) &&
+      (!field  || o.field === field) &&
+      (!status || o.status === status)
+    );
+
+    document.getElementById('sideCount').textContent = offers.length;
+
+    if (!filtered.length) {
+      document.getElementById('offersGrid').innerHTML = '';
+      document.getElementById('emptyState').style.display = '';
+      return;
+    }
+    document.getElementById('emptyState').style.display = 'none';
+
+    document.getElementById('offersGrid').innerHTML = filtered.map(o => `
+      <div class="offer-card" id="card-${o.id}">
+        <div class="offer-card-top">
+          <div class="offer-card-head">
+            <span class="offer-field-badge">📚 ${o.field}</span>
+            <span class="offer-status-pill ${o.status === 'active' ? 'pill-active' : 'pill-closed'}">${o.status === 'active' ? '● Active' : '○ Closed'}</span>
+          </div>
+          <div class="offer-title">${o.title}</div>
+          <div class="offer-meta">
+            <span class="offer-meta-item">📍 ${o.location}</span>
+            <span class="offer-meta-item">⏱ ${o.duration}</span>
+            ${o.skills ? `<span class="offer-meta-item">⚡ ${o.skills.split(',').slice(0,2).join(', ')}${o.skills.split(',').length > 2 ? '…' : ''}</span>` : ''}
+          </div>
+          <p class="offer-desc">${o.desc || '—'}</p>
+        </div>
+        <div class="offer-card-foot">
+          <span class="offer-apps-count">👥 ${o.apps} applicant${o.apps !== 1 ? 's' : ''}</span>
+          <div class="offer-actions">
+            <a href="Company_applications.html?offer=${o.id}" class="btn-icon view-apps" title="View applications">👁</a>
+            <button class="btn-icon" onclick="editOffer(${o.id})" title="Edit offer">✏️</button>
+            <button class="btn-icon del" onclick="askDelete(${o.id})" title="Delete offer">🗑️</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // ── Modal open/close ───────────────────────────────────────────────────────
+  function openModal(id = null) {
+    editingId = id;
+    document.getElementById('modalErr').className = 'msg';
+
+    if (id) {
+      const o = offers.find(x => x.id === id);
+      document.getElementById('modalTitle').textContent = 'Edit Offer';
+      document.getElementById('fTitle').value    = o.title;
+      document.getElementById('fField').value    = o.field;
+      document.getElementById('fLocation').value = o.location;
+      document.getElementById('fDuration').value = o.duration;
+      document.getElementById('fStatus').value   = o.status;
+      document.getElementById('fSkills').value   = o.skills;
+      document.getElementById('fDesc').value     = o.desc;
+    } else {
+      document.getElementById('modalTitle').textContent = 'Post New Offer';
+      ['fTitle','fLocation','fSkills','fDesc'].forEach(fid => document.getElementById(fid).value = '');
+      document.getElementById('fField').value    = '';
+      document.getElementById('fDuration').value = '';
+      document.getElementById('fStatus').value   = 'active';
+    }
+    document.getElementById('offerModal').classList.add('open');
+  }
+
+  function closeModal() { document.getElementById('offerModal').classList.remove('open'); }
+
+  // ── Save (POST to PHP) ─────────────────────────────────────────────────────
+  function saveOffer() {
+    const title    = document.getElementById('fTitle').value.trim();
+    const field    = document.getElementById('fField').value;
+    const location = document.getElementById('fLocation').value.trim();
+    const duration = document.getElementById('fDuration').value;
+
+    if (!title || !field || !location || !duration) {
+      const err = document.getElementById('modalErr');
+      err.textContent = 'Please fill in all required fields.';
+      err.className = 'msg error show';
+      return;
+    }
+
+    const btn = document.querySelector('.btn-save');
+    btn.textContent = 'Saving…';
+    btn.disabled = true;
+
+    const fd = new FormData();
+    if (editingId) fd.append('id', editingId);
+    fd.append('title',    title);
+    fd.append('field',    field);
+    fd.append('location', location);
+    fd.append('duration', duration);
+    fd.append('status',   document.getElementById('fStatus').value);
+    fd.append('skills',   document.getElementById('fSkills').value.trim());
+    fd.append('desc',     document.getElementById('fDesc').value.trim());
+
+    fetch('../php/save_offer.php', { method: 'POST', body: fd })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          closeModal();
+          loadOffers();   // refresh from DB
+        } else {
+          const err = document.getElementById('modalErr');
+          err.textContent = data.message || 'Failed to save offer.';
+          err.className = 'msg error show';
+        }
+      })
+      .catch(() => {
+        const err = document.getElementById('modalErr');
+        err.textContent = 'Server error. Please try again.';
+        err.className = 'msg error show';
+      })
+      .finally(() => { btn.textContent = 'Save Offer'; btn.disabled = false; });
+  }
+
+  function editOffer(id) { openModal(id); }
+
+  // ── Delete (POST to PHP) ───────────────────────────────────────────────────
+  function askDelete(id) {
+    deletingId = id;
+    const o = offers.find(x => x.id === id);
+    document.getElementById('delTitle').textContent = `"${o.title}"`;
+    document.getElementById('delModal').classList.add('open');
+  }
+  function closeDelModal() { document.getElementById('delModal').classList.remove('open'); }
+
+  function confirmDelete() {
+    const fd = new FormData();
+    fd.append('id', deletingId);
+
+    fetch('../php/delete_offer.php', { method: 'POST', body: fd })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          closeDelModal();
+          loadOffers();   // refresh from DB
+        } else {
+          alert(data.message || 'Failed to delete offer.');
+        }
+      })
+      .catch(() => alert('Server error. Please try again.'));
+  }
+
+  // Close modal on overlay click
+  ['offerModal','delModal'].forEach(mid => {
+    document.getElementById(mid).addEventListener('click', e => {
+      if (e.target.id === mid) {
+        mid === 'offerModal' ? closeModal() : closeDelModal();
+      }
+    });
+  });
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  loadOffers();
+
+  // Open "new" modal if URL has ?new=1
+  if (new URLSearchParams(window.location.search).get('new') === '1') openModal();
+
+  (function() {
+    if (localStorage.getItem('il-theme') === 'light') {
+      document.body.classList.add('light');
+      document.getElementById('themeKnob').textContent = '☀️';
+    }
+  })();
+  function toggleTheme() {
+    const l = document.body.classList.toggle('light');
+    document.getElementById('themeKnob').textContent = l ? '☀️' : '🌙';
+    localStorage.setItem('il-theme', l ? 'light' : 'dark');
+  }
+</script>
+</body>
+</html>
