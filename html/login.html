@@ -327,10 +327,14 @@
     btn.textContent = 'Sending code…';
     btn.disabled    = true;
 
+    const loginData = new FormData();
+    loginData.append('email', email);
+    loginData.append('password', pass);
+    loginData.append('role', selectedRole);
+
     fetch('../phpsecure/login.php', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ email, password: pass, role: selectedRole })
+      method: 'POST',
+      body:   loginData,
     })
     .then(r => r.json())
     .then(data => {
@@ -400,10 +404,12 @@
     btn.textContent = 'Verifying…';
     btn.disabled    = true;
 
+    const otpData = new FormData();
+    otpData.append('otp', otp);
+
     fetch('../phpsecure/verify_2fa.php', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ otp })
+      method: 'POST',
+      body:   otpData,
     })
     .then(r => r.json())
     .then(data => {
@@ -428,10 +434,14 @@
     document.getElementById('resendBtn').disabled = true;
     clearOtp();
 
+    const resendData = new FormData();
+    resendData.append('email', email);
+    resendData.append('password', pass);
+    resendData.append('role', selectedRole);
+
     fetch('../phpsecure/login.php', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ email, password: pass, role: selectedRole })
+      method: 'POST',
+      body:   resendData,
     })
     .then(r => r.json())
     .then(data => {
