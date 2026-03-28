@@ -3,9 +3,10 @@ error_reporting(0);
 ini_set('display_errors', 0);
 header('Content-Type: application/json');
 
-// Must match session name in auth_guard.php
+session_save_path(sys_get_temp_dir());
 session_name('internlink_session');
 session_start();
+
 require_once __DIR__ . '/db.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -13,24 +14,19 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-if (empty($_SESSION['pending_user_id'])) {
-    echo json_encode(['success' => false, 'message' => 'Session expired. Please log in again.']);
-    exit;
-}
-
-$otp    = trim($_POST['otp'] ?? '');
-$userId = (int) $_SESSION['pending_user_id'];
+$otp = trim($_POST['otp'] ?? '');
 
 if (strlen($otp) !== 6 || !ctype_digit($otp)) {
     echo json_encode(['success' => false, 'message' => 'Invalid code format.']);
     exit;
 }
 
+// ── Find user by OTP directly in DB — no session needed ──
 try {
     $stmt = $pdo->prepare(
-        'SELECT * FROM users WHERE id = ? AND two_fa_code = ? AND two_fa_expires > NOW()'
+        'SELECT * FROM users WHERE two_fa_code = ? AND two_fa_expires > NOW()'
     );
-    $stmt->execute([$userId, $otp]);
+    $stmt->execute([$otp]);
     $user = $stmt->fetch();
 } catch (PDOException $e) {
     echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
@@ -42,17 +38,17 @@ if (!$user) {
     exit;
 }
 
-// Clear OTP
+// ── Clear OTP ─────────────────────────────────
 $pdo->prepare('UPDATE users SET two_fa_code = NULL, two_fa_expires = NULL WHERE id = ?')
-    ->execute([$userId]);
+    ->execute([$user['id']]);
 
-// Start full session
-unset($_SESSION['pending_user_id'], $_SESSION['pending_role']);
+// ── Start full session ────────────────────────
 $_SESSION['user_id']    = $user['id'];
 $_SESSION['user_email'] = $user['email'];
 $_SESSION['user_name']  = $user['first_name'] . ' ' . $user['last_name'];
 $_SESSION['user_role']  = $user['role'];
 
+// ── Redirect ──────────────────────────────────
 $base = '/internlink';
 $redirectMap = [
     'company' => $base . '/company/html/Company_dashboard.html',
