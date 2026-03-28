@@ -41,7 +41,7 @@ if (!$user || !password_verify($password, $user['password'])) {
     exit;
 }
 
-// ── Skip 2FA — set session directly ──────────
+// ── Set session directly ──────────────────────
 $_SESSION['user_id']    = $user['id'];
 $_SESSION['user_email'] = $user['email'];
 $_SESSION['user_name']  = $user['first_name'] . ' ' . $user['last_name'];
@@ -49,8 +49,8 @@ $_SESSION['user_role']  = $user['role'];
 
 $base = '/internlink';
 $redirectMap = [
-    'company' => $base . '/company/html/Company_dashboard.html',
-    'student' => $base . '/student/html/Student_dashboard.html',
+    'company' => $base . '/company/html/company_dashboard.html',
+    'student' => $base . '/student/html/student_dashboard.html',
     'admin'   => $base . '/admin/html/admin_dashboard.html',
 ];
 $redirect = $redirectMap[$user['role']] ?? $base . '/html/index.html';
