@@ -3,6 +3,7 @@ error_reporting(0);
 ini_set('display_errors', 0);
 header('Content-Type: application/json');
 
+session_save_path(sys_get_temp_dir());
 session_name('internlink_session');
 session_start();
 require_once __DIR__ . '/db.php';
@@ -40,40 +41,23 @@ if (!$user || !password_verify($password, $user['password'])) {
     exit;
 }
 
-$otp     = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-$expires = date('Y-m-d H:i:s', time() + 600);
+// ── Skip 2FA — set session directly ──────────
+$_SESSION['user_id']    = $user['id'];
+$_SESSION['user_email'] = $user['email'];
+$_SESSION['user_name']  = $user['first_name'] . ' ' . $user['last_name'];
+$_SESSION['user_role']  = $user['role'];
 
-try {
-    $pdo->prepare('UPDATE users SET two_fa_code = ?, two_fa_expires = ? WHERE id = ?')
-        ->execute([$otp, $expires, $user['id']]);
-} catch (PDOException $e) {
-    echo json_encode(['success' => false, 'message' => 'Failed to save OTP: ' . $e->getMessage()]);
-    exit;
-}
-
-$_SESSION['pending_user_id'] = $user['id'];
-$_SESSION['pending_role']    = $user['role'];
-
-$mailSent = @mail(
-    $user['email'],
-    'Your internLink verification code',
-    "Hello {$user['first_name']},\n\nYour code is: {$otp}\n\nExpires in 10 minutes.\n\n— internLink",
-    'From: no-reply@internlink.com'
-);
-
-if (!$mailSent) {
-    $logDir = __DIR__ . '/../logs/';
-    if (!is_dir($logDir)) mkdir($logDir, 0755, true);
-    file_put_contents(
-        $logDir . 'otp_dev.log',
-        '[' . date('Y-m-d H:i:s') . '] Email: ' . $user['email'] . ' | OTP: ' . $otp . PHP_EOL,
-        FILE_APPEND
-    );
-}
+$base = '/internlink';
+$redirectMap = [
+    'company' => $base . '/company/html/Company_dashboard.html',
+    'student' => $base . '/student/html/Student_dashboard.html',
+    'admin'   => $base . '/admin/html/admin_dashboard.html',
+];
+$redirect = $redirectMap[$user['role']] ?? $base . '/html/index.html';
 
 echo json_encode([
     'success'      => true,
-    'requires_2fa' => true,
-    'message'      => '2FA code sent to your email.',
-    'dev_otp'      => $mailSent ? null : $otp,
+    'requires_2fa' => false,
+    'redirect'     => $redirect,
+    'message'      => 'Login successful.',
 ]);
