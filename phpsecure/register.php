@@ -90,4 +90,4 @@ try {
 } catch (PDOException $e) {
     $pdo->rollBack();
     echo json_encode(['success' => false, 'message' => 'Registration failed: ' . $e->getMessage()]);
-}
+} 
