@@ -6,11 +6,14 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth.php';
 
 $userId = $_SESSION['user_id'];
-$data   = json_decode(file_get_contents('php://input'), true);
-$appId  = (int)($data['application_id'] ?? 0);
+$data   = json_decode(file_get_contents('php://input'), true) ?? [];
+$appId  = (int)($data['application_id'] ?? $_POST['application_id'] ?? 0);
 
-// Verify ownership and that it's still pending
-$stmt = $pdo->prepare("SELECT id FROM applications WHERE id=? AND student_id=? AND status='pending'");
+// Verify ownership and that it's still waiting/pending
+$stmt = $pdo->prepare("
+    SELECT id FROM applications 
+    WHERE id = ? AND student_id = ? AND status IN ('waiting', 'pending')
+");
 $stmt->execute([$appId, $userId]);
 
 if (!$stmt->fetch()) {
@@ -18,5 +21,7 @@ if (!$stmt->fetch()) {
     exit;
 }
 
-$pdo->prepare("DELETE FROM applications WHERE id=? AND student_id=?")->execute([$appId, $userId]);
+$pdo->prepare("DELETE FROM applications WHERE id = ? AND student_id = ?")
+    ->execute([$appId, $userId]);
+
 echo json_encode(['success' => true, 'message' => 'Application withdrawn.']);

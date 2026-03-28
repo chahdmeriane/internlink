@@ -6,44 +6,45 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth.php';
 
 $userId = $_SESSION['user_id'];
-$data   = json_decode(file_get_contents('php://input'), true);
+$data   = json_decode(file_get_contents('php://input'), true) ?? [];
 
-$internshipId = (int)($data['internship_id'] ?? 0);
-$coverLetter  = trim($data['cover_letter']   ?? '');
+// Accept both JSON and FormData
+$offerId     = (int)($data['internship_id'] ?? $data['offer_id'] ?? $_POST['internship_id'] ?? $_POST['offer_id'] ?? 0);
+$coverLetter = trim($data['cover_letter'] ?? $_POST['cover_letter'] ?? '');
 
-if (!$internshipId) {
-    echo json_encode(['success' => false, 'message' => 'Invalid internship.']);
+if (!$offerId) {
+    echo json_encode(['success' => false, 'message' => 'Invalid offer.']);
     exit;
 }
 
-// ── Verify internship is active ───────────────────────────────────────────
+// ── Verify offer is active ────────────────────────────────────────────────
 $stmt = $pdo->prepare("
-    SELECT id, required_skills FROM internships
-    WHERE id=? AND is_active=1 AND (deadline IS NULL OR deadline >= CURDATE())
+    SELECT id, skills FROM internship_offers
+    WHERE id = ? AND status = 'active'
 ");
-$stmt->execute([$internshipId]);
-$internship = $stmt->fetch();
+$stmt->execute([$offerId]);
+$offer = $stmt->fetch();
 
-if (!$internship) {
-    echo json_encode(['success' => false, 'message' => 'Internship not found or deadline has passed.']);
+if (!$offer) {
+    echo json_encode(['success' => false, 'message' => 'Offer not found or no longer active.']);
     exit;
 }
 
 // ── Duplicate check ───────────────────────────────────────────────────────
-$dup = $pdo->prepare("SELECT id FROM applications WHERE student_id=? AND internship_id=?");
-$dup->execute([$userId, $internshipId]);
+$dup = $pdo->prepare("SELECT id FROM applications WHERE student_id = ? AND offer_id = ?");
+$dup->execute([$userId, $offerId]);
 if ($dup->fetch()) {
-    echo json_encode(['success' => false, 'message' => 'You have already applied to this internship.']);
+    echo json_encode(['success' => false, 'message' => 'You have already applied to this offer.']);
     exit;
 }
 
 // ── Compute match % ───────────────────────────────────────────────────────
-$skillStmt = $pdo->prepare("SELECT skills FROM student_profiles WHERE user_id=?");
+$skillStmt = $pdo->prepare("SELECT skills FROM student_profiles WHERE user_id = ?");
 $skillStmt->execute([$userId]);
 $sp = $skillStmt->fetch();
 
 $studentSkills = array_filter(array_map('strtolower', array_map('trim', explode(',', $sp['skills'] ?? ''))));
-$required      = array_filter(array_map('strtolower', array_map('trim', explode(',', $internship['required_skills'] ?? ''))));
+$required      = array_filter(array_map('strtolower', array_map('trim', explode(',', $offer['skills'] ?? ''))));
 
 $matchPct = 0;
 if (!empty($required) && !empty($studentSkills)) {
@@ -58,9 +59,9 @@ if (!empty($required) && !empty($studentSkills)) {
 
 // ── Insert application ────────────────────────────────────────────────────
 $pdo->prepare("
-    INSERT INTO applications (student_id, internship_id, cover_letter, match_percent, status, applied_at)
-    VALUES (?, ?, ?, ?, 'pending', NOW())
-")->execute([$userId, $internshipId, $coverLetter ?: null, $matchPct]);
+    INSERT INTO applications (student_id, offer_id, cover_letter, match_percent, status, applied_at)
+    VALUES (?, ?, ?, ?, 'waiting', NOW())
+")->execute([$userId, $offerId, $coverLetter ?: null, $matchPct]);
 
 echo json_encode([
     'success'       => true,

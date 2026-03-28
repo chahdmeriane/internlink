@@ -22,42 +22,44 @@ if (!empty($student['skills'])) {
     $studentSkills = array_filter(array_map('strtolower', array_map('trim', explode(',', $student['skills']))));
 }
 
-// ── Fetch all active internships ──────────────────────────────────────────
+// ── Fetch all active offers from internship_offers ────────────────────────
 $stmt = $pdo->prepare("
-    SELECT i.*,
-           u.first_name  AS company_name,
+    SELECT io.*,
+           cp.company_name,
            cp.country    AS company_country,
-           cp.wilaya     AS company_city,
            cp.sector     AS company_sector,
-           COALESCE(i.domain, cp.sector) AS domain
-    FROM internships i
-    JOIN users u            ON u.id  = i.company_id
-    LEFT JOIN company_profiles cp ON cp.user_id = i.company_id
-    WHERE i.is_active = 1
-      AND (i.deadline IS NULL OR i.deadline >= CURDATE())
-    ORDER BY i.created_at DESC
+           COALESCE(io.country, cp.country) AS display_country,
+           COALESCE(io.domain,  cp.sector)  AS display_domain
+    FROM internship_offers io
+    JOIN company_profiles cp ON cp.user_id = io.company_id
+    WHERE io.status = 'active'
+    ORDER BY io.created_at DESC
 ");
 $stmt->execute();
-$internships = $stmt->fetchAll();
+$offers = $stmt->fetchAll();
 
-// ── Applied IDs ───────────────────────────────────────────────────────────
-$stmt2 = $pdo->prepare("SELECT internship_id FROM applications WHERE student_id=?");
+// ── Applied offer IDs ─────────────────────────────────────────────────────
+$stmt2 = $pdo->prepare("SELECT offer_id FROM applications WHERE student_id = ?");
 $stmt2->execute([$userId]);
-$appliedIds = array_column($stmt2->fetchAll(), 'internship_id');
+$appliedIds = array_column($stmt2->fetchAll(), 'offer_id');
 
-// ── Compute match % per internship ────────────────────────────────────────
-foreach ($internships as &$i) {
-    // Normalise location: prefer internship's own country/wilaya, fallback to company's
-    if (empty($i['country'])) $i['country'] = $i['company_country'] ?? '';
-    if (empty($i['wilaya']))  $i['wilaya']  = $i['company_city']    ?? '';
+// ── Saved offer IDs ───────────────────────────────────────────────────────
+$stmt3 = $pdo->prepare("SELECT offer_id FROM saved_offers WHERE student_id = ?");
+$stmt3->execute([$userId]);
+$savedIds = array_column($stmt3->fetchAll(), 'offer_id');
+
+// ── Compute match % per offer ─────────────────────────────────────────────
+foreach ($offers as &$o) {
+    $o['country'] = $o['display_country'] ?? '';
+    $o['domain']  = $o['display_domain']  ?? '';
 
     $required = [];
-    if (!empty($i['required_skills'])) {
-        $required = array_filter(array_map('strtolower', array_map('trim', explode(',', $i['required_skills']))));
+    if (!empty($o['skills'])) {
+        $required = array_filter(array_map('strtolower', array_map('trim', explode(',', $o['skills']))));
     }
 
     if (empty($required) || empty($studentSkills)) {
-        $i['match_percent'] = 0;
+        $o['match_percent'] = 0;
     } else {
         $matched = 0;
         foreach ($required as $skill) {
@@ -65,17 +67,18 @@ foreach ($internships as &$i) {
                 if (str_contains($ss, $skill) || str_contains($skill, $ss)) { $matched++; break; }
             }
         }
-        $i['match_percent'] = (int)round(($matched / count($required)) * 100);
+        $o['match_percent'] = (int)round(($matched / count($required)) * 100);
     }
 }
-unset($i);
+unset($o);
 
 // Sort by match % descending
-usort($internships, fn($a,$b) => ($b['match_percent'] ?? 0) - ($a['match_percent'] ?? 0));
+usort($offers, fn($a, $b) => ($b['match_percent'] ?? 0) - ($a['match_percent'] ?? 0));
 
 echo json_encode([
     'success'      => true,
-    'internships'  => $internships,
+    'internships'  => $offers,       // keep key name so HTML doesn't break
     'applied_ids'  => $appliedIds,
+    'saved_ids'    => $savedIds,
     'student_name' => $student['first_name'] ?? 'Student',
 ]);
