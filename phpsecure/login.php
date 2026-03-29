@@ -1,6 +1,7 @@
 <?php
 error_reporting(0);
 ini_set('display_errors', 0);
+ini_set('session.cookie_path', '/');
 header('Content-Type: application/json');
 
 session_save_path(sys_get_temp_dir());
@@ -22,7 +23,6 @@ if (!$email || !$password) {
     exit;
 }
 
-// Find user by email only
 try {
     $stmt = $pdo->prepare('SELECT * FROM users WHERE email = ?');
     $stmt->execute([$email]);
@@ -37,7 +37,6 @@ if (!$user || !password_verify($password, $user['password'])) {
     exit;
 }
 
-// For student/company: enforce role match. Admin: skip check entirely
 if ($user['role'] !== 'admin' && !empty($role) && $user['role'] !== $role) {
     echo json_encode(['success' => false, 'message' => 'Incorrect email or password.']);
     exit;
