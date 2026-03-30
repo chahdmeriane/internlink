@@ -130,7 +130,7 @@
     fetch(`../php/get_companies.php?filter=${currentFilter}&q=${encodeURIComponent(q)}&page=${currentPage}`)
       .then(r => r.json())
       .then(d => {
-        if (!d.success) { window.location.href = '../../html/login.html'; return; }
+        if (!d.success) { window.location.href = '/internlink/html/login.html'; return; }
         document.getElementById('pendingBadge').textContent = '';
         renderCards(d.companies);
         renderPagination(d.page, d.pages);
