@@ -329,6 +329,7 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
     const loginData = new FormData();
     loginData.append('email', email);
     loginData.append('password', pass);
+    loginData.append('role', selectedRole);
 
     fetch('../phpsecure/login.php', {
       method: 'POST',
