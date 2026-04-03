@@ -1,9 +1,6 @@
 <?php
-// ─────────────────────────────────────────────
-//  Database connection — internLink
-//  Used by ALL PHP files via require_once
-// ─────────────────────────────────────────────
 
+//  Database connection — internLink nkhdmo fiha fi php files lokhrin b require_once
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
 define('DB_PASS', '');          // Leave empty for XAMPP/WAMP default
@@ -23,4 +20,5 @@ try {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Database connection failed.']);
     exit;
-}
+} 
+//we conect with db secured b pdo prepare w if failee connection yroh lcatch li ymd msg l js fi front end 
