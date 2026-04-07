@@ -2,8 +2,10 @@
 error_reporting(0);
 ini_set('display_errors', 0);
 header('Content-Type: application/json');
-require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/auth_guard.php';
+header('X-Frame-Options: DENY');
+header('X-Content-Type-Options: nosniff');
+require_once __DIR__ . '/../../phpsecure/db.php';
+require_once __DIR__ . '/../../phpsecure/auth_guard.php';
 
 $offerId = !empty($_GET['offer_id']) ? (int) $_GET['offer_id'] : null;
 

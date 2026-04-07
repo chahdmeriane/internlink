@@ -1,6 +1,7 @@
 <?php
-error_reporting(0);
-ini_set('display_errors', 0);
+// ─────────────────────────────────────────────
+//  Database connection — internLink
+// ─────────────────────────────────────────────
 
 if (!defined('DB_HOST')) define('DB_HOST', 'localhost');
 if (!defined('DB_USER')) define('DB_USER', 'root');
@@ -19,7 +20,10 @@ try {
         ]
     );
 } catch (PDOException $e) {
+    // FIX: log the real error server-side, never expose it to the client
+    error_log('DB connection failed: ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database connection failed: ' . $e->getMessage()]);
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'message' => 'A server error occurred. Please try again later.']);
     exit;
 }

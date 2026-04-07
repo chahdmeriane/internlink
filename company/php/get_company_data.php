@@ -2,13 +2,15 @@
 error_reporting(0);
 ini_set('display_errors', 0);
 header('Content-Type: application/json');
+header('X-Frame-Options: DENY');
+header('X-Content-Type-Options: nosniff');
 
 session_save_path(sys_get_temp_dir());
 session_name('internlink_session');
 session_start();
 
-require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/auth_guard.php';
+require_once __DIR__ . '/../../phpsecure/db.php';
+require_once __DIR__ . '/../../phpsecure/auth_guard.php';
 
 // ── Fetch company profile ─────────────────────
 $stmt = $pdo->prepare(

@@ -1,17 +1,24 @@
 <?php
 error_reporting(0);
 ini_set('display_errors', 0);
+
 header('Content-Type: application/json');
-require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/auth.php';
+header('X-Frame-Options: DENY');
+header('X-Content-Type-Options: nosniff');
+
+require_once __DIR__ . '/../../phpsecure/db.php';
+require_once __DIR__ . '/../../phpsecure/auth_student.php'; // FIX: use student-specific auth guard
 
 $userId = $_SESSION['user_id'];
 
 // Accept both JSON and FormData
-$raw     = file_get_contents('php://input');
-$body    = $raw ? (json_decode($raw, true) ?? []) : [];
-$offerId = (int)($body['internship_id'] ?? $body['offer_id'] ?? $_POST['internship_id'] ?? $_POST['offer_id'] ?? 0);
+$raw         = file_get_contents('php://input');
+$body        = $raw ? (json_decode($raw, true) ?? []) : [];
+$offerId     = (int)($body['internship_id'] ?? $body['offer_id'] ?? $_POST['internship_id'] ?? $_POST['offer_id'] ?? 0);
 $coverLetter = trim($body['cover_letter'] ?? $_POST['cover_letter'] ?? '');
+
+// FIX: sanitize cover letter input
+$coverLetter = htmlspecialchars($coverLetter, ENT_QUOTES, 'UTF-8');
 
 if (!$offerId) {
     echo json_encode(['success' => false, 'message' => 'Invalid offer.']);
@@ -24,7 +31,8 @@ try {
     $stmt->execute([$offerId]);
     $offer = $stmt->fetch();
 } catch (PDOException $e) {
-    echo json_encode(['success' => false, 'message' => 'DB error: ' . $e->getMessage()]);
+    error_log('apply.php offer fetch error: ' . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'A server error occurred.']);
     exit;
 }
 
@@ -34,17 +42,27 @@ if (!$offer) {
 }
 
 // Duplicate check
-$dup = $pdo->prepare("SELECT id FROM applications WHERE student_id = ? AND offer_id = ?");
-$dup->execute([$userId, $offerId]);
-if ($dup->fetch()) {
-    echo json_encode(['success' => false, 'message' => 'You have already applied to this offer.']);
+try {
+    $dup = $pdo->prepare("SELECT id FROM applications WHERE student_id = ? AND offer_id = ?");
+    $dup->execute([$userId, $offerId]);
+    if ($dup->fetch()) {
+        echo json_encode(['success' => false, 'message' => 'You have already applied to this offer.']);
+        exit;
+    }
+} catch (PDOException $e) {
+    error_log('apply.php duplicate check error: ' . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'A server error occurred.']);
     exit;
 }
 
 // Compute match %
-$skillStmt = $pdo->prepare("SELECT skills FROM student_profiles WHERE user_id = ?");
-$skillStmt->execute([$userId]);
-$sp = $skillStmt->fetch();
+try {
+    $skillStmt = $pdo->prepare("SELECT skills FROM student_profiles WHERE user_id = ?");
+    $skillStmt->execute([$userId]);
+    $sp = $skillStmt->fetch();
+} catch (PDOException $e) {
+    $sp = [];
+}
 
 $studentSkills = array_filter(array_map('strtolower', array_map('trim', explode(',', $sp['skills'] ?? ''))));
 $required      = array_filter(array_map('strtolower', array_map('trim', explode(',', $offer['skills'] ?? ''))));
@@ -57,7 +75,7 @@ if (!empty($required) && !empty($studentSkills)) {
             if (str_contains($ss, $skill) || str_contains($skill, $ss)) { $matched++; break; }
         }
     }
-    $matchPct = (int)round(($matched / count($required)) * 100);
+    $matchPct = (int) round(($matched / count($required)) * 100);
 }
 
 // Insert application
@@ -67,7 +85,8 @@ try {
         VALUES (?, ?, ?, ?, 'waiting', NOW())
     ")->execute([$userId, $offerId, $coverLetter ?: null, $matchPct]);
 } catch (PDOException $e) {
-    echo json_encode(['success' => false, 'message' => 'Failed to apply: ' . $e->getMessage()]);
+    error_log('apply.php insert error: ' . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Failed to submit application. Please try again.']);
     exit;
 }
 

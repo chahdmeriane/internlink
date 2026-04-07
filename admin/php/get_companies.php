@@ -2,8 +2,10 @@
 error_reporting(0);
 ini_set('display_errors', 0);
 header('Content-Type: application/json');
-require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/auth.php';
+header('X-Frame-Options: DENY');
+header('X-Content-Type-Options: nosniff');
+require_once __DIR__ . '/../../phpsecure/db.php';
+require_once __DIR__ . '/../../phpsecure/auth.php';
 
 $filter = $_GET['filter'] ?? 'all';
 $search = trim($_GET['q'] ?? '');

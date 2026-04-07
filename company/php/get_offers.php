@@ -14,8 +14,10 @@ session_start();
 // ─────────────────────────────────────────────
 
 header('Content-Type: application/json');
-require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/auth_guard.php';
+header('X-Frame-Options: DENY');
+header('X-Content-Type-Options: nosniff');
+require_once __DIR__ . '/../../phpsecure/db.php';
+require_once __DIR__ . '/../../phpsecure/auth_guard.php';
 
 $stmt = $pdo->prepare(
     "SELECT o.id, o.title, o.field, o.location, o.duration,

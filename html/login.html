@@ -360,13 +360,13 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   // ── Panel switching ────────────────────────────────────────────────────────
   function showTwoFaPanel() {
     document.getElementById('loginPanel').style.display  = 'none';
-    document.getElementById('twoFaPanel').style.display  = '';
+    document.getElementById('twoFaPanel').style.display  = 'block';
     // Focus first OTP digit
     document.querySelectorAll('.otp-digit')[0]?.focus();
   }
   function showLoginPanel() {
     document.getElementById('twoFaPanel').style.display  = 'none';
-    document.getElementById('loginPanel').style.display  = '';
+    document.getElementById('loginPanel').style.display  = 'block';
     clearOtp();
     clearInterval(resendInterval);
   }
@@ -423,7 +423,7 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
       if (data.success) {
         showMsg('otpSuccess', '✓ Verified! Redirecting…', 'success');
         setTimeout(() => {
-          window.location.href = '/internlink/company/html/Company_dashboard.html';
+          window.location.href = data.redirect;
         }, 1500);
       } else {
         showMsg('otpError', data.message || 'Verification failed.');

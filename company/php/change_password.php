@@ -1,13 +1,13 @@
 <?php
-
 error_reporting(0);
 ini_set('display_errors', 0);
 
 session_save_path(sys_get_temp_dir());
 session_name('internlink_session');
 session_start();
+
 // ─────────────────────────────────────────────
-//  change_password.php  —  internLink
+//  change_password.php — internLink
 //  Verifies current password and updates to
 //  a new one.
 //  POST fields: currentPassword, newPassword,
@@ -15,8 +15,11 @@ session_start();
 // ─────────────────────────────────────────────
 
 header('Content-Type: application/json');
-require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/auth_guard.php';
+header('X-Frame-Options: DENY');
+header('X-Content-Type-Options: nosniff');
+
+require_once __DIR__ . '/../../phpsecure/db.php';
+require_once __DIR__ . '/../../phpsecure/auth_guard.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
@@ -32,8 +35,17 @@ if (!$current || !$new || !$confirm) {
     exit;
 }
 
+// FIX: stronger password policy on new password
 if (strlen($new) < 8) {
     echo json_encode(['success' => false, 'message' => 'New password must be at least 8 characters.']);
+    exit;
+}
+if (!preg_match('/[A-Z]/', $new)) {
+    echo json_encode(['success' => false, 'message' => 'New password must contain at least one uppercase letter.']);
+    exit;
+}
+if (!preg_match('/[0-9]/', $new)) {
+    echo json_encode(['success' => false, 'message' => 'New password must contain at least one number.']);
     exit;
 }
 
@@ -42,19 +54,28 @@ if ($new !== $confirm) {
     exit;
 }
 
-// ── Fetch current hashed password ─────────────
-$stmt = $pdo->prepare('SELECT password FROM users WHERE id = ?');
-$stmt->execute([$companyUserId]);
-$user = $stmt->fetch();
+// FIX: wrap DB calls in try/catch so errors are logged not exposed
+try {
+    $stmt = $pdo->prepare('SELECT password FROM users WHERE id = ?');
+    $stmt->execute([$companyUserId]);
+    $user = $stmt->fetch();
+} catch (PDOException $e) {
+    error_log('change_password fetch error: ' . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'A server error occurred.']);
+    exit;
+}
 
 if (!$user || !password_verify($current, $user['password'])) {
     echo json_encode(['success' => false, 'message' => 'Current password is incorrect.']);
     exit;
 }
 
-// ── Update password ───────────────────────────
-$hashed = password_hash($new, PASSWORD_BCRYPT);
-$pdo->prepare('UPDATE users SET password = ? WHERE id = ?')
-    ->execute([$hashed, $companyUserId]);
-
-echo json_encode(['success' => true, 'message' => 'Password updated successfully!']);
+try {
+    $hashed = password_hash($new, PASSWORD_BCRYPT);
+    $pdo->prepare('UPDATE users SET password = ? WHERE id = ?')
+        ->execute([$hashed, $companyUserId]);
+    echo json_encode(['success' => true, 'message' => 'Password updated successfully!']);
+} catch (PDOException $e) {
+    error_log('change_password update error: ' . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'A server error occurred.']);
+}

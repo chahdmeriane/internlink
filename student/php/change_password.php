@@ -2,8 +2,8 @@
 error_reporting(0);
 ini_set('display_errors', 0);
 header('Content-Type: application/json');
-require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/../../phpsecure/db.php';
+require_once __DIR__ . '/../../phpsecure/auth_student.php';
 
 $userId = $_SESSION['user_id'];
 $data   = json_decode(file_get_contents('php://input'), true);
