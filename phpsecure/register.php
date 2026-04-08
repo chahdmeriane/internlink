@@ -7,7 +7,7 @@ header('Content-Type: application/json');
 header('X-Frame-Options: DENY');
 header('X-Content-Type-Options: nosniff');
 
-// ── Session (needed for CSRF check) ──────────────────────────────────────────
+// ── Session ───────────────────────────────────────────────────────────────────
 ini_set('session.cookie_httponly', 1);
 ini_set('session.cookie_samesite', 'Strict');
 ini_set('session.cookie_path', '/');
@@ -16,21 +16,14 @@ session_name('internlink_session');
 session_start();
 
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/send_otp.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
     exit;
 }
 
-// ── CSRF check ────────────────────────────────────────────────────────────────
-// NOTE: uncomment once get_csrf.php is wired into your register HTML
-// $csrfToken = $_POST['csrf_token'] ?? '';
-// if (empty($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $csrfToken)) {
-//     echo json_encode(['success' => false, 'message' => 'Invalid request. Please refresh and try again.']);
-//     exit;
-// }
-
-// FIX: sanitize all text inputs to prevent stored XSS
+// FIX: sanitize all text inputs
 function clean(string $val): string {
     return htmlspecialchars(trim($val), ENT_QUOTES, 'UTF-8');
 }
@@ -56,7 +49,6 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     exit;
 }
 
-// FIX: stronger password policy
 if (strlen($password) < 8) {
     echo json_encode(['success' => false, 'message' => 'Password must be at least 8 characters.']);
     exit;
@@ -121,14 +113,49 @@ try {
     }
 
     $pdo->commit();
-
-    // Rotate CSRF token after registration
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-
-    echo json_encode(['success' => true, 'message' => 'Account created successfully!']);
-
 } catch (PDOException $e) {
     $pdo->rollBack();
     error_log('Register transaction error: ' . $e->getMessage());
     echo json_encode(['success' => false, 'message' => 'Registration failed. Please try again.']);
+    exit;
 }
+
+// ── Send email verification OTP ───────────────────────────────────────────────
+// Account is created — now send OTP to verify their email before letting them in
+$user = ['id' => $userId, 'email' => $email, 'first_name' => $firstName];
+
+$_SESSION['2fa_pending_user_id'] = $userId;
+$_SESSION['2fa_context']         = 'registration'; // tells verify_2fa.php this is a new registration
+
+$sent = sendOtp($pdo, $user);
+
+if (!$sent) {
+    // Account created but email failed — let them in anyway, just skip OTP
+    unset($_SESSION['2fa_pending_user_id'], $_SESSION['2fa_context']);
+    session_regenerate_id(true);
+    $_SESSION['user_id']    = $userId;
+    $_SESSION['user_email'] = $email;
+    $_SESSION['user_name']  = $firstName . ' ' . $lastName;
+    $_SESSION['user_role']  = $type;
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+
+    $base = '/internlink';
+    $redirect = $type === 'student'
+        ? $base . '/student/html/student_dashboard.html'
+        : $base . '/company/html/company_dashboard.html';
+
+    echo json_encode([
+        'success'      => true,
+        'requires_otp' => false,
+        'redirect'     => $redirect,
+        'message'      => 'Account created successfully!',
+    ]);
+    exit;
+}
+
+// OTP sent — ask frontend to show verification screen
+echo json_encode([
+    'success'      => true,
+    'requires_otp' => true,
+    'message'      => 'Account created! Please check your email for a verification code.',
+]);

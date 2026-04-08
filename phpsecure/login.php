@@ -18,7 +18,7 @@ session_name('internlink_session');
 session_start();
 
 require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/send_otp.php'; // handles OTP generation + emailing
+require_once __DIR__ . '/send_otp.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
@@ -36,7 +36,7 @@ if (!$email || !$password) {
 
 // ── Brute-force protection ────────────────────────────────────────────────────
 $ip           = $_SERVER['REMOTE_ADDR'];
-$lockoutKey   = 'login_attempts_'     . md5($ip);
+$lockoutKey   = 'login_attempts_'      . md5($ip);
 $lockoutUntil = 'login_lockout_until_' . md5($ip);
 
 if (!empty($_SESSION[$lockoutUntil]) && time() < $_SESSION[$lockoutUntil]) {
@@ -83,26 +83,52 @@ if ($user['role'] !== 'admin' && !empty($role) && $user['role'] !== $role) {
     exit;
 }
 
-// ── 2FA — generate OTP, save to DB, send email ───────────────────────────────
-// Store the pending user ID in session BEFORE sending email
-// so verify_2fa.php knows which user to check
-$_SESSION['2fa_pending_user_id'] = $user['id'];
+// ── 2FA — ADMIN ONLY ─────────────────────────────────────────────────────────
+// Students and companies log in directly — no 2FA on login.
+// 2FA for students/companies happens only at registration (email verification).
+if ($user['role'] === 'admin') {
+    $_SESSION['2fa_pending_user_id'] = $user['id'];
+    $_SESSION['2fa_context']         = 'login';
 
-$sent = sendOtp($pdo, $user);
+    $isResend = !empty($_POST['is_resend']);
+    $sent     = sendOtp($pdo, $user, $isResend);
 
-if (!$sent) {
-    // Email failed — clear pending session and tell the user
-    unset($_SESSION['2fa_pending_user_id']);
+    if (!$sent) {
+        unset($_SESSION['2fa_pending_user_id'], $_SESSION['2fa_context']);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Could not send verification email. You may have reached the resend limit — please try again in 10 minutes.',
+        ]);
+        exit;
+    }
+
     echo json_encode([
-        'success' => false,
-        'message' => 'Could not send verification email. Please check your email address or try again later.',
+        'success'      => true,
+        'requires_2fa' => true,
+        'message'      => 'A 6-digit code has been sent to your admin email.',
     ]);
     exit;
 }
 
-// Email sent successfully — tell the frontend to show the OTP screen
+// ── Students & Companies — direct login ──────────────────────────────────────
+session_regenerate_id(true);
+
+$_SESSION['user_id']    = $user['id'];
+$_SESSION['user_email'] = $user['email'];
+$_SESSION['user_name']  = $user['first_name'] . ' ' . $user['last_name'];
+$_SESSION['user_role']  = $user['role'];
+$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+
+$base = '/internlink';
+$redirectMap = [
+    'company' => $base . '/company/html/company_dashboard.html',
+    'student' => $base . '/student/html/student_dashboard.html',
+];
+$redirect = $redirectMap[$user['role']] ?? $base . '/html/index.html';
+
 echo json_encode([
     'success'      => true,
-    'requires_2fa' => true,
-    'message'      => 'A 6-digit code has been sent to your email.',
+    'requires_2fa' => false,
+    'redirect'     => $redirect,
+    'message'      => 'Login successful.',
 ]);

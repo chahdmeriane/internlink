@@ -1,30 +1,51 @@
 <?php
 // ─────────────────────────────────────────────
 //  send_otp.php — internLink
-//  Called by login.php after credentials pass.
-//  Generates a 6-digit OTP, saves it to DB,
-//  and emails it to the user.
-//
-//  This is NOT called directly by the browser.
-//  It is included by login.php internally.
+//  Generates OTP, saves to DB, emails it.
+//  Used by: login.php (admin 2FA)
+//           register.php (email verification)
 // ─────────────────────────────────────────────
 
 require_once __DIR__ . '/mailer.php';
 
 /**
  * Generate OTP, store in DB, send to user email.
+ * Includes resend rate limiting — max 3 sends per 10 minutes per user.
  *
- * @param PDO    $pdo   Database connection
- * @param array  $user  User row from DB (must have id, email, first_name)
- * @return bool         true if email sent, false if failed
+ * @param PDO    $pdo      Database connection
+ * @param array  $user     User array (must have id, email, first_name)
+ * @param bool   $isResend Pass true when this is a resend request
+ * @return bool|string     true on success, error message string on failure
  */
-function sendOtp(PDO $pdo, array $user): bool
+function sendOtp(PDO $pdo, array $user, bool $isResend = false): bool
 {
-    // Generate a cryptographically secure 6-digit OTP
-    $otp     = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-    $expires = date('Y-m-d H:i:s', time() + 600); // expires in 10 minutes
+    // ── Resend rate limiting ──────────────────────────────────────────────────
+    // Max 3 OTP sends per 10 minutes per user
+    if ($isResend) {
+        $resendKey      = 'otp_resend_count_' . $user['id'];
+        $resendUntilKey = 'otp_resend_until_'  . $user['id'];
 
-    // Save OTP to DB
+        if (!empty($_SESSION[$resendUntilKey]) && time() < $_SESSION[$resendUntilKey]) {
+            $wait = $_SESSION[$resendUntilKey] - time();
+            error_log("send_otp: resend blocked for user {$user['id']} — {$wait}s remaining");
+            return false;
+        }
+
+        $_SESSION[$resendKey] = ($_SESSION[$resendKey] ?? 0) + 1;
+
+        if ($_SESSION[$resendKey] >= 3) {
+            $_SESSION[$resendUntilKey] = time() + 600; // 10-minute block
+            $_SESSION[$resendKey]      = 0;
+            error_log("send_otp: resend limit reached for user {$user['id']}");
+            return false;
+        }
+    }
+
+    // ── Generate OTP ──────────────────────────────────────────────────────────
+    $otp     = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+    $expires = date('Y-m-d H:i:s', time() + 600); // 10 minutes
+
+    // ── Save OTP to DB ────────────────────────────────────────────────────────
     try {
         $pdo->prepare(
             "UPDATE users SET two_fa_code = ?, two_fa_expires = ? WHERE id = ?"
@@ -34,16 +55,14 @@ function sendOtp(PDO $pdo, array $user): bool
         return false;
     }
 
-    // Build the email HTML
+    // ── Build email ───────────────────────────────────────────────────────────
     $name    = htmlspecialchars($user['first_name'], ENT_QUOTES, 'UTF-8');
     $subject = 'Your internLink verification code';
     $body    = "
     <div style='font-family:sans-serif;max-width:480px;margin:auto;padding:32px;'>
         <h2 style='color:#4f8ef7;margin-bottom:8px;'>internLink</h2>
         <p style='color:#333;font-size:15px;'>Hi {$name},</p>
-        <p style='color:#333;font-size:15px;'>
-            Your login verification code is:
-        </p>
+        <p style='color:#333;font-size:15px;'>Your verification code is:</p>
         <div style='
             font-size:36px;
             font-weight:bold;
@@ -58,7 +77,7 @@ function sendOtp(PDO $pdo, array $user): bool
         '>{$otp}</div>
         <p style='color:#555;font-size:13px;'>
             This code expires in <strong>10 minutes</strong>.<br/>
-            If you did not try to log in, you can safely ignore this email.
+            If you did not request this, you can safely ignore this email.
         </p>
         <hr style='border:none;border-top:1px solid #eee;margin:24px 0;'/>
         <p style='color:#aaa;font-size:12px;'>internLink — Connecting students with opportunities.</p>

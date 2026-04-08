@@ -120,6 +120,15 @@
     body.light .social-btn { background:var(--surface) !important; }
 
     @media (max-width:900px) { .left-panel{display:none} .right-panel{padding:32px 20px} .form-grid-2{grid-template-columns:1fr} .field.span2{grid-column:span 1} }
+
+    /* OTP verification panel */
+    #otpPanel { display:none; }
+    .otp-inputs { display:flex; gap:10px; justify-content:center; margin:24px 0; }
+    .otp-digit { width:48px; height:56px; text-align:center; font-size:1.4rem; font-weight:700; background:var(--surface); border:1.5px solid var(--border); border-radius:10px; color:var(--text); outline:none; transition:all .2s; padding:0; -webkit-appearance:none; }
+    .otp-digit:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(79,142,247,.2); }
+    .otp-info { text-align:center; color:var(--muted); font-size:.875rem; margin-bottom:20px; line-height:1.6; }
+    .resend-link { color:var(--accent); cursor:pointer; text-decoration:underline; background:none; border:none; font-family:'DM Sans',sans-serif; font-size:.85rem; padding:0; }
+    .resend-link:disabled { color:var(--muted); cursor:default; text-decoration:none; }
   </style>
 </head>
 <body>
@@ -258,6 +267,30 @@
     </div>
 
     <p class="login-prompt" style="margin-top:20px">Already have an account? <a href="login.html">Log in →</a></p>
+
+    <!-- OTP Verification Panel -->
+    <div id="otpPanel">
+      <div class="form-header">
+        <div class="form-title">Check your email ✉️</div>
+        <p class="form-sub">We sent a 6-digit code to <strong id="otpSentTo" style="color:var(--text)"></strong></p>
+      </div>
+      <div class="msg error" id="otpError"></div>
+      <div class="msg success" id="otpSuccess"></div>
+      <p class="otp-info">Enter the code below. It expires in <strong>10 minutes</strong>.</p>
+      <div class="otp-inputs">
+        <input class="otp-digit" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code"/>
+        <input class="otp-digit" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]"/>
+        <input class="otp-digit" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]"/>
+        <input class="otp-digit" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]"/>
+        <input class="otp-digit" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]"/>
+        <input class="otp-digit" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]"/>
+      </div>
+      <button class="btn-submit" onclick="handleVerifyOtp()" id="verifyOtpBtn">Verify Email →</button>
+      <div style="text-align:center;margin-top:12px">
+        <button class="resend-link" id="regResendBtn" onclick="resendRegOtp()">Resend code</button>
+        <span style="color:var(--muted);font-size:.85rem" id="regResendTimer"></span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -332,6 +365,13 @@
     currentStep = n;
   }
 
+  // Stores registered email for OTP resend
+  let registeredEmail    = '';
+  let registeredPassword = '';
+  let regResendCount     = 0;
+  const MAX_REG_RESENDS  = 3;
+  let regResendInterval  = null;
+
   function handleSignup() {
     hideMsg('errorMsg');
     if (!document.getElementById('termsCheck').checked) {
@@ -357,7 +397,10 @@
       bio:         document.getElementById('bio').value,
     };
 
-    // FIX: was incorrectly calling login.php — now correctly calls register.php
+    // Save for resend
+    registeredEmail    = data.email;
+    registeredPassword = data.password;
+
     const formData = new FormData();
     Object.keys(data).forEach(key => formData.append(key, data[key]));
 
@@ -367,10 +410,20 @@
     })
     .then(r => r.json())
     .then(res => {
-      if (res.success) {
-        showMsg('successMsg', '✓ Account created! Redirecting to login…', 'success');
-        // FIX: was redirecting to dashboard.html which doesn't exist — now goes to login
-        setTimeout(() => window.location.href = 'login.html', 1500);
+      if (res.success && res.requires_otp) {
+        // Show OTP verification panel
+        document.getElementById('step3').style.display        = 'none';
+        document.querySelector('.steps-bar').style.display    = 'none';
+        document.querySelector('.step-label-row').style.display = 'none';
+        document.querySelector('.login-prompt').style.display = 'none';
+        document.getElementById('otpSentTo').textContent      = registeredEmail;
+        document.getElementById('otpPanel').style.display     = 'block';
+        document.querySelector('.form-title').textContent     = 'Verify your email';
+        document.querySelectorAll('.otp-digit')[0]?.focus();
+        startRegResendTimer(60);
+      } else if (res.success && res.redirect) {
+        // Email failed to send but account created — go straight to dashboard
+        window.location.href = res.redirect;
       } else {
         showMsg('errorMsg', res.message || 'An error occurred.');
         btn.textContent = 'Create Account'; btn.disabled = false;
@@ -380,6 +433,112 @@
       showMsg('errorMsg','Server error. Try again later.');
       btn.textContent = 'Create Account'; btn.disabled = false;
     });
+  }
+
+  // ── OTP digit UX for register page ──────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('#otpPanel .otp-digit').forEach((input, idx, all) => {
+      input.addEventListener('input', () => {
+        input.value = input.value.replace(/\D/g,'');
+        if (input.value && idx < all.length - 1) all[idx + 1].focus();
+      });
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Backspace' && !input.value && idx > 0) all[idx - 1].focus();
+      });
+      input.addEventListener('paste', e => {
+        e.preventDefault();
+        const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'');
+        [...pasted].slice(0, 6).forEach((ch, i) => { if (all[i]) all[i].value = ch; });
+        all[Math.min(pasted.length, 5)].focus();
+      });
+    });
+  });
+
+  function getRegOtp() {
+    return [...document.querySelectorAll('#otpPanel .otp-digit')].map(i => i.value).join('');
+  }
+
+  function handleVerifyOtp() {
+    const otp = getRegOtp();
+    if (otp.length !== 6) {
+      showMsg('otpError', 'Please enter the full 6-digit code.');
+      return;
+    }
+    const btn = document.getElementById('verifyOtpBtn');
+    btn.textContent = 'Verifying…'; btn.disabled = true;
+
+    const fd = new FormData();
+    fd.append('otp', otp);
+
+    fetch('../phpsecure/verify_2fa.php', { method: 'POST', body: fd })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          showMsg('otpSuccess', '✓ ' + (data.message || 'Email verified!'), 'success');
+          setTimeout(() => window.location.href = data.redirect, 1500);
+        } else {
+          showMsg('otpError', data.message || 'Verification failed.');
+          btn.textContent = 'Verify Email →'; btn.disabled = false;
+        }
+      })
+      .catch(() => {
+        showMsg('otpError', 'Server error. Please try again.');
+        btn.textContent = 'Verify Email →'; btn.disabled = false;
+      });
+  }
+
+  function resendRegOtp() {
+    if (regResendCount >= MAX_REG_RESENDS) {
+      showMsg('otpError', 'Maximum resend limit reached. Please register again.');
+      document.getElementById('regResendBtn').disabled = true;
+      return;
+    }
+
+    document.getElementById('regResendBtn').disabled = true;
+
+    const fd = new FormData();
+    fd.append('email',      registeredEmail);
+    fd.append('password',   registeredPassword);
+    fd.append('is_resend',  '1');
+
+    fetch('../phpsecure/login.php', { method: 'POST', body: fd })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          regResendCount++;
+          const remaining = MAX_REG_RESENDS - regResendCount;
+          showMsg('otpSuccess',
+            remaining > 0
+              ? `New code sent. (${remaining} resend${remaining !== 1 ? 's' : ''} remaining)`
+              : 'New code sent. No more resends allowed.',
+            'success');
+          startRegResendTimer(60);
+        } else {
+          showMsg('otpError', data.message || 'Could not resend code.');
+          document.getElementById('regResendBtn').disabled = false;
+        }
+      })
+      .catch(() => {
+        showMsg('otpError', 'Server error.');
+        document.getElementById('regResendBtn').disabled = false;
+      });
+  }
+
+  function startRegResendTimer(seconds) {
+    const btn   = document.getElementById('regResendBtn');
+    const timer = document.getElementById('regResendTimer');
+    btn.disabled = true;
+    let left = seconds;
+    clearInterval(regResendInterval);
+    regResendInterval = setInterval(() => {
+      timer.textContent = ` (${left}s)`;
+      left--;
+      if (left < 0) {
+        clearInterval(regResendInterval);
+        if (regResendCount < MAX_REG_RESENDS) btn.disabled = false;
+        timer.textContent = '';
+      }
+    }, 1000);
   }
 
   (function() {

@@ -436,7 +436,17 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   }
 
   // ── Resend code ────────────────────────────────────────────────────────────
+  let resendCount = 0; // track how many times resend was clicked
+  const MAX_RESENDS = 3;
+
   function resendCode() {
+    // FIX: limit resends to 3 attempts
+    if (resendCount >= MAX_RESENDS) {
+      showMsg('otpError', 'Maximum resend limit reached. Please go back and log in again.');
+      document.getElementById('resendBtn').disabled = true;
+      return;
+    }
+
     const email = document.getElementById('email').value.trim();
     const pass  = document.getElementById('password').value;
 
@@ -447,6 +457,7 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
     resendData.append('email', email);
     resendData.append('password', pass);
     resendData.append('role', selectedRole);
+    resendData.append('is_resend', '1'); // tell server this is a resend
 
     fetch('../phpsecure/login.php', {
       method: 'POST',
@@ -455,13 +466,22 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
     .then(r => r.json())
     .then(data => {
       if (data.success) {
-        showMsg('otpSuccess', 'A new code was sent to your email.', 'success');
+        resendCount++;
+        const remaining = MAX_RESENDS - resendCount;
+        const msg = remaining > 0
+          ? `A new code was sent. (${remaining} resend${remaining !== 1 ? 's' : ''} remaining)`
+          : 'A new code was sent. No more resends allowed.';
+        showMsg('otpSuccess', msg, 'success');
         startResendTimer(60);
       } else {
         showMsg('otpError', data.message || 'Could not resend code.');
+        document.getElementById('resendBtn').disabled = false;
       }
     })
-    .catch(() => showMsg('otpError', 'Server error.'));
+    .catch(() => {
+      showMsg('otpError', 'Server error.');
+      document.getElementById('resendBtn').disabled = false;
+    });
   }
 
   function startResendTimer(seconds) {

@@ -23,12 +23,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// ── Must have a pending login in session ──────────────────────────────────────
+// ── Must have a pending user in session ───────────────────────────────────────
 if (empty($_SESSION['2fa_pending_user_id'])) {
     echo json_encode(['success' => false, 'message' => 'Session expired. Please log in again.']);
     exit;
 }
 $pendingUserId = (int) $_SESSION['2fa_pending_user_id'];
+$context       = $_SESSION['2fa_context'] ?? 'login'; // 'login' or 'registration'
 
 // ── Rate limiting — max 5 wrong OTPs then 10-minute lockout ──────────────────
 $attemptsKey  = '2fa_attempts';
@@ -64,7 +65,6 @@ try {
 }
 
 if (!$user) {
-    // Wrong or expired OTP — increment failure counter
     $_SESSION[$attemptsKey] = ($_SESSION[$attemptsKey] ?? 0) + 1;
     if ($_SESSION[$attemptsKey] >= 5) {
         $_SESSION[$lockoutUntil] = time() + 600;
@@ -85,7 +85,8 @@ try {
 }
 
 // ── Clean up 2FA session keys ─────────────────────────────────────────────────
-unset($_SESSION['2fa_pending_user_id'], $_SESSION[$attemptsKey], $_SESSION[$lockoutUntil]);
+unset($_SESSION['2fa_pending_user_id'], $_SESSION['2fa_context'],
+      $_SESSION[$attemptsKey], $_SESSION[$lockoutUntil]);
 
 // ── Create full authenticated session ────────────────────────────────────────
 $_SESSION['user_id']    = $user['id'];
@@ -94,7 +95,6 @@ $_SESSION['user_name']  = $user['first_name'] . ' ' . $user['last_name'];
 $_SESSION['user_role']  = $user['role'];
 $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
-// ── Regenerate session ID AFTER writing data to prevent fixation ──────────────
 session_regenerate_id(true);
 
 // ── Redirect based on role ────────────────────────────────────────────────────
@@ -106,8 +106,13 @@ $redirectMap = [
 ];
 $redirect = $redirectMap[$user['role']] ?? $base . '/html/index.html';
 
+// Customize message based on context
+$message = $context === 'registration'
+    ? 'Email verified! Welcome to internLink.'
+    : 'Verified successfully!';
+
 echo json_encode([
     'success'  => true,
-    'message'  => 'Verified successfully!',
+    'message'  => $message,
     'redirect' => $redirect,
 ]);
