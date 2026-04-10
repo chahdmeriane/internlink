@@ -145,12 +145,12 @@
 <aside class="sidebar">
   <div class="sidebar-header">
     <div class="logo">intern<span>Link</span></div>
-    <div class="company-badge"><div class="cab">TC</div><div><div class="cn">TechCorp Inc.</div><div class="cr">Company Account</div></div></div>
+    <div class="company-badge"><div class="cab" id="sidebarAvatar">TC</div><div><div class="cn" id="sidebarName">Loading…</div><div class="cr">Company Account</div></div></div>
   </div>
   <div class="nav-section">
     <div class="nav-label">Main</div>
     <a class="nav-item" href="company_dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
-    <a class="nav-item active" href="company_offers.html"><span class="nav-icon">📋</span> Internship Offers <span class="nav-badge" id="sideCount">4</span></a>
+    <a class="nav-item active" href="company_offers.html"><span class="nav-icon">📋</span> Internship Offers <span class="nav-badge" id="offersCount"></span></a>
     <a class="nav-item" href="company_applications.html"><span class="nav-icon">👥</span> Applications <span class="nav-badge warn" id="appsCount"></span></a>
   </div>
   <div class="nav-section">
@@ -337,7 +337,7 @@
       (!status || o.status === status)
     );
 
-    document.getElementById('sideCount').textContent = offers.length;
+    document.getElementById('offersCount').textContent = offers.length;
 
     if (!filtered.length) {
       document.getElementById('offersGrid').innerHTML = '';
@@ -503,7 +503,7 @@
     localStorage.setItem('il-theme', l ? 'light' : 'dark');
   }
 </script>
-<script src="../../translate-widget.js"></script>
+
 <script>
   // ── Load sidebar badges & company name ───────────────────────────────────
   (function loadSidebar() {
@@ -511,23 +511,25 @@
       .then(r => r.json())
       .then(data => {
         if (!data.success) return;
-        const name = data.profile.company_name;
+        const displayName = data.profile.company_name || data.profile.email || 'My Company';
         const el = document.getElementById('sidebarName');
         const av = document.getElementById('sidebarAvatar');
-        if (el) el.textContent = name;
+        if (el) el.textContent = displayName;
         if (av) {
           if (data.profile.avatar_path) {
             av.innerHTML = '<img src="' + data.profile.avatar_path + '" style="width:100%;height:100%;object-fit:cover;border-radius:8px"/>';
           } else {
-            av.textContent = data.profile.initials;
+            av.textContent = data.profile.initials || displayName.charAt(0).toUpperCase();
           }
         }
         const oc = document.getElementById('offersCount');
         const ac = document.getElementById('appsCount');
         const nc = document.getElementById('notifCount');
         if (oc) oc.textContent = data.stats.active_offers;
-        if (ac) { ac.textContent = data.stats.pending_apps; }
-        if (nc && data.stats.pending_apps > 0) { nc.textContent = data.stats.pending_apps; nc.style.display = ''; }
+        if (ac) ac.textContent = data.stats.pending_apps;
+        if (data.stats.pending_apps > 0) {
+          if (nc) { nc.textContent = data.stats.pending_apps; nc.style.display = ''; }
+        }
       })
       .catch(() => {});
   })();

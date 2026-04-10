@@ -335,46 +335,57 @@
 <script>
   // ── Load profile data from PHP on page load ────────────────────────────────
   function loadProfile() {
-    // Load hero summary
     fetch('../php/get_company_data.php')
       .then(r => r.json())
       .then(data => {
         if (!data.success) { window.location.href = '../../../html/login.html'; return; }
         const p = data.profile;
-        document.getElementById('heroName').textContent      = p.company_name;
-        document.getElementById('heroCountry').textContent   = p.country  || '—';
-        document.getElementById('heroSector').textContent    = p.sector   || '—';
-        document.getElementById('avatarPreview').textContent = p.initials;
-      })
-      .catch(() => console.error('Failed to load profile summary.'));
 
-    // Load full profile to populate all form fields
-    fetch('../php/get_company_data.php')
-      .then(r => r.json())
-      .then(data => {
-        if (!data.success) return;
-        const p = data.profile;
+        // Hero
+        const displayName = p.company_name || p.email || 'My Company';
+        document.getElementById('heroName').textContent    = displayName;
+        document.getElementById('heroCountry').textContent = p.country      || '—';
+        document.getElementById('heroSector').textContent  = p.sector       || '—';
 
-        // Basic info
-        if (p.company_name) document.getElementById('companyName').value  = p.company_name;
-        if (p.country)      document.getElementById('country').value      = p.country;
-        if (p.sector)       document.getElementById('sector').value       = p.sector;
-        if (p.description)  document.getElementById('description').value  = p.description;
+        // Avatar
+        const av = document.getElementById('avatarPreview');
+        if (p.avatar_path) {
+          av.innerHTML = '<img src="' + p.avatar_path + '" style="width:100%;height:100%;object-fit:cover;border-radius:13px"/>';
+        } else {
+          av.textContent = p.initials || displayName.charAt(0).toUpperCase();
+        }
 
-        // Contact info
+        // Sidebar
+        const sn = document.getElementById('sidebarName');
+        const sa = document.getElementById('sidebarAvatar');
+        if (sn) sn.textContent = displayName;
+        if (sa) {
+          if (p.avatar_path) {
+            sa.innerHTML = '<img src="' + p.avatar_path + '" style="width:100%;height:100%;object-fit:cover;border-radius:8px"/>';
+          } else {
+            sa.textContent = p.initials || displayName.charAt(0).toUpperCase();
+          }
+        }
+        const oc = document.getElementById('offersCount');
+        const ac = document.getElementById('appsCount');
+        const nc = document.getElementById('notifCount');
+        if (oc) oc.textContent = data.stats.active_offers;
+        if (ac) ac.textContent = data.stats.pending_apps;
+        if (data.stats.pending_apps > 0) { if (nc) { nc.textContent = data.stats.pending_apps; nc.style.display = ''; } }
+
+        // Basic info form fields
+        if (p.company_name) document.getElementById('companyName').value = p.company_name;
+        if (p.country)      document.getElementById('country').value     = p.country;
+        if (p.city)         document.getElementById('city').value        = p.city;
+        if (p.sector)       document.getElementById('sector').value      = p.sector;
+        if (p.description)  document.getElementById('description').value = p.description;
+
+        // Contact info form fields
         if (p.email)    document.getElementById('contactEmail').value = p.email;
         if (p.phone)    document.getElementById('phone').value        = p.phone;
         if (p.linkedin) document.getElementById('linkedin').value     = p.linkedin;
-
-        // Avatar
-        if (p.avatar_path) {
-          const av = document.getElementById('avatarPreview');
-          av.innerHTML = '<img src="' + p.avatar_path + '" style="width:100%;height:100%;object-fit:cover;border-radius:13px"/>';
-        }
       })
-      .catch(() => console.error('Failed to load profile fields.'));
-
-    // (second fetch placeholder removed)
+      .catch(() => console.error('Failed to load profile.'));
   }
 
   // ── Save basic profile ─────────────────────────────────────────────────────
@@ -536,33 +547,5 @@
   }
 </script>
 <script src="../../translate-widget.js"></script>
-<script>
-  // ── Load sidebar badges & company name ───────────────────────────────────
-  (function loadSidebar() {
-    fetch('../php/get_company_data.php')
-      .then(r => r.json())
-      .then(data => {
-        if (!data.success) return;
-        const name = data.profile.company_name;
-        const el = document.getElementById('sidebarName');
-        const av = document.getElementById('sidebarAvatar');
-        if (el) el.textContent = name;
-        if (av) {
-          if (data.profile.avatar_path) {
-            av.innerHTML = '<img src="' + data.profile.avatar_path + '" style="width:100%;height:100%;object-fit:cover;border-radius:8px"/>';
-          } else {
-            av.textContent = data.profile.initials;
-          }
-        }
-        const oc = document.getElementById('offersCount');
-        const ac = document.getElementById('appsCount');
-        const nc = document.getElementById('notifCount');
-        if (oc) oc.textContent = data.stats.active_offers;
-        if (ac) { ac.textContent = data.stats.pending_apps; }
-        if (nc && data.stats.pending_apps > 0) { nc.textContent = data.stats.pending_apps; nc.style.display = ''; }
-      })
-      .catch(() => {});
-  })();
-</script>
 </body>
 </html>

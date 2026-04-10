@@ -159,20 +159,21 @@
       .then(r => r.json())
       .then(data => {
         if (!data.success) return;
+        const displayName = data.profile.company_name || data.profile.email || 'My Company';
         const sn = document.getElementById('sidebarName');
         const sa = document.getElementById('sidebarAvatar');
-        if (sn) sn.textContent = data.profile.company_name;
+        if (sn) sn.textContent = displayName;
         if (sa) {
           if (data.profile.avatar_path) {
             sa.innerHTML = '<img src="'+data.profile.avatar_path+'" style="width:100%;height:100%;object-fit:cover;border-radius:8px"/>';
-          } else { sa.textContent = data.profile.initials; }
+          } else { sa.textContent = data.profile.initials || displayName.charAt(0).toUpperCase(); }
         }
         const oc = document.getElementById('offersCount');
         const ac = document.getElementById('appsCount');
         const nc = document.getElementById('notifCount');
         if (oc) oc.textContent = data.stats.active_offers;
         if (ac) ac.textContent = data.stats.pending_apps;
-        if (nc && data.stats.pending_apps > 0) { nc.textContent = data.stats.pending_apps; nc.style.display = ''; }
+        if (data.stats.pending_apps > 0) { if (nc) { nc.textContent = data.stats.pending_apps; nc.style.display = ''; } }
       }).catch(()=>{});
   })();
 

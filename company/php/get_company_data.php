@@ -15,7 +15,7 @@ require_once __DIR__ . '/../../phpsecure/auth_guard.php';
 // ── Fetch company profile ─────────────────────
 $stmt = $pdo->prepare(
     'SELECT u.first_name, u.last_name, u.email,
-            cp.company_name, cp.sector, cp.country,
+            cp.company_name, cp.sector, cp.country, cp.city,
             cp.description, cp.avatar_path, cp.phone, cp.linkedin
      FROM users u
      LEFT JOIN company_profiles cp ON cp.user_id = u.id
