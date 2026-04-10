@@ -280,7 +280,7 @@
 
   // ── Load all data from PHP ─────────────────────────────────────────────────
   function loadApplications() {
-    fetch('../php/get_applications.php')
+    fetch('../php/get_applications.php', { credentials: 'include' })
       .then(r => r.json())
       .then(data => {
         if (!data.success) { window.location.href = '../../../html/login.html'; return; }
@@ -415,7 +415,7 @@
     const fd = new FormData();
     fd.append('id', id);
     fd.append('status', status);
-    fetch('../php/set_application_status.php', { method: 'POST', body: fd })
+    fetch('../php/set_application_status.php', { credentials: 'include',  method: 'POST', body: fd })
       .then(r => r.json())
       .then(data => { if (!data.success) console.error('Status update failed:', data.message); })
       .catch(() => console.error('Failed to update status.'));
@@ -496,7 +496,7 @@
 <script>
   // ── Load sidebar badges & company name ───────────────────────────────────
   (function loadSidebar() {
-    fetch('../php/get_company_data.php')
+    fetch('../php/get_company_data.php', { credentials: 'include' })
       .then(r => r.json())
       .then(data => {
         if (!data.success) return;
@@ -523,5 +523,7 @@
       .catch(() => {});
   })();
 </script>
+</body>
+</html>
 </body>
 </html>

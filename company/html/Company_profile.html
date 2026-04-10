@@ -335,7 +335,7 @@
 <script>
   // ── Load profile data from PHP on page load ────────────────────────────────
   function loadProfile() {
-    fetch('../php/get_company_data.php')
+    fetch('../php/get_company_data.php', { credentials: 'include' })
       .then(r => r.json())
       .then(data => {
         if (!data.success) { window.location.href = '../../../html/login.html'; return; }
@@ -371,7 +371,7 @@
         const nc = document.getElementById('notifCount');
         if (oc) oc.textContent = data.stats.active_offers;
         if (ac) ac.textContent = data.stats.pending_apps;
-        if (data.stats.pending_apps > 0) { if (nc) { nc.textContent = data.stats.pending_apps; nc.style.display = ''; } }
+        if (nc && data.stats.pending_apps > 0) { nc.textContent = data.stats.pending_apps; nc.style.display = ''; }
 
         // Basic info form fields
         if (p.company_name) document.getElementById('companyName').value = p.company_name;
@@ -413,7 +413,7 @@
     const avatarFile = document.getElementById('avatarInput').files[0];
     if (avatarFile) fd.append('avatar', avatarFile);
 
-    fetch('../php/company_profile_save.php', { method: 'POST', body: fd })
+    fetch('../php/company_profile_save.php', { credentials: 'include',  method: 'POST', body: fd })
       .then(r => r.json())
       .then(data => {
         if (data.success) {
@@ -452,7 +452,7 @@
     fd.append('phone',        document.getElementById('phone').value.trim());
     fd.append('linkedin',     document.getElementById('linkedin').value.trim());
 
-    fetch('../php/company_profile_save.php', { method: 'POST', body: fd })
+    fetch('../php/company_profile_save.php', { credentials: 'include',  method: 'POST', body: fd })
       .then(r => r.json())
       .then(data => showMsg(data.message || (data.success ? 'Saved!' : 'Error.'), data.success ? 'success' : 'error'))
       .catch(() => showMsg('Server error.', 'error'));
@@ -477,7 +477,7 @@
     fd.append('newPassword',     nw);
     fd.append('confirmPassword', conf);
 
-    fetch('../php/change_password.php', { method: 'POST', body: fd })
+    fetch('../php/change_password.php', { credentials: 'include',  method: 'POST', body: fd })
       .then(r => r.json())
       .then(data => {
         if (data.success) {
@@ -514,7 +514,7 @@
   function deleteAccount() {
     const fd = new FormData();
     fd.append('action', 'delete_account');
-    fetch('../php/delete_account.php', { method: 'POST', body: fd })
+    fetch('../php/delete_account.php', { credentials: 'include',  method: 'POST', body: fd })
       .then(r => r.json())
       .then(data => {
         if (data.success) window.location.href = '../../index.html';

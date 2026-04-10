@@ -108,7 +108,7 @@
 
 <script>
   function loadNotifications() {
-    fetch('../php/get_company_notifications.php')
+    fetch('../php/get_company_notifications.php', { credentials: 'include' })
       .then(r => r.json())
       .then(data => {
         if (!data.success) { window.location.href = '/internlink/html/login.html'; return; }
@@ -138,7 +138,7 @@
   }
 
   function markAllRead() {
-    fetch('../php/get_company_notifications.php?mark_read=1').then(() => {
+    fetch('../php/get_company_notifications.php?mark_read=1', { credentials: 'include' }).then(() => {
       document.querySelectorAll('.notif-card.unread').forEach(c => c.classList.remove('unread'));
     });
   }
@@ -155,7 +155,7 @@
 
   // ── Load sidebar ──────────────────────────────────────────────────────────
   (function loadSidebar() {
-    fetch('../php/get_company_data.php')
+    fetch('../php/get_company_data.php', { credentials: 'include' })
       .then(r => r.json())
       .then(data => {
         if (!data.success) return;
@@ -173,7 +173,7 @@
         const nc = document.getElementById('notifCount');
         if (oc) oc.textContent = data.stats.active_offers;
         if (ac) ac.textContent = data.stats.pending_apps;
-        if (data.stats.pending_apps > 0) { if (nc) { nc.textContent = data.stats.pending_apps; nc.style.display = ''; } }
+        if (nc && data.stats.pending_apps > 0) { nc.textContent = data.stats.pending_apps; nc.style.display = ''; }
       }).catch(()=>{});
   })();
 
