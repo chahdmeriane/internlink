@@ -267,7 +267,42 @@
 
     @media (max-width:900px) { .sidebar{display:none} .main{margin-left:0;padding:20px 16px} .form-grid{grid-template-columns:1fr} .stats-row{grid-template-columns:1fr 1fr} }
     @media (max-width:600px) { .profile-hero{flex-direction:column;text-align:center} .hero-completion{margin-left:0} .hero-meta{justify-content:center} }
+
+    /* ── Profile map modal ── */
+    .map-modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 600;
+      background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .map-modal-overlay.open { display: flex; }
+    .map-modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; width: 100%; max-width: 680px;
+      overflow: hidden; animation: fadeUp .3s ease;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+    }
+    .map-modal-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+    }
+    .map-modal-head h3 { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800; }
+    .map-modal-close { background: none; border: none; font-size: 1.1rem; cursor: pointer; color: var(--muted); padding: 4px 6px; border-radius: 6px; transition: all .15s; }
+    .map-modal-close:hover { background: var(--surface2); color: var(--text); }
+    .map-search-bar { display: flex; gap: 8px; padding: 12px 18px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+    .map-search-bar input { flex: 1; padding: 9px 14px; background: var(--surface); border: 1.5px solid var(--border); border-radius: 9px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: .875rem; outline: none; }
+    .map-search-bar input:focus { border-color: var(--accent); }
+    .map-search-bar input::placeholder { color: var(--muted); opacity: .7; }
+    .map-sbtn { padding: 9px 14px; background: var(--accent); color: #fff; border: none; border-radius: 9px; font-family: 'DM Sans', sans-serif; font-size: .82rem; font-weight: 600; cursor: pointer; transition: background .2s; white-space: nowrap; }
+    .map-sbtn:hover { background: #3b7de8; }
+    #profileMapContainer { height: 320px; width: 100%; }
+    .map-footer { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .map-footer-info { flex: 1; font-size: .8rem; color: var(--muted); }
+    .map-footer-info strong { color: var(--text); }
+    .map-save-btn { padding: 8px 18px; background: var(--accent3); color: #fff; border: none; border-radius: 9px; font-family: 'DM Sans', sans-serif; font-size: .82rem; font-weight: 600; cursor: pointer; transition: all .2s; }
+    .map-save-btn:hover { background: #059669; }
+    body.light .map-search-bar input { background: #fff; }
   </style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 </head>
 <body>
 
@@ -424,6 +459,16 @@
           <div class="form-group">
             <label class="form-label">City</label>
             <input class="form-input" type="text" id="wilaya" placeholder="e.g. New York, London, Paris…"/>
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label class="form-label">📍 Pin My Location <span style="font-weight:400;color:var(--muted)">(optional — helps match nearby internships)</span></label>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+              <button type="button" class="btn btn-ghost" onclick="openProfileMap()" style="gap:8px;font-size:.82rem">🗺️ Set on Map</button>
+              <button type="button" class="btn btn-ghost" onclick="useProfileGPS()" style="gap:8px;font-size:.82rem;color:var(--accent3);border-color:rgba(52,211,153,.3)">📡 Use My GPS</button>
+              <span id="profileLocLabel" style="font-size:.8rem;color:var(--muted)">No location pinned yet.</span>
+            </div>
+            <input type="hidden" id="profileLat"/>
+            <input type="hidden" id="profileLng"/>
           </div>
           <div class="form-group">
             <label class="form-label">Field of Study <span class="req">*</span></label>
@@ -869,6 +914,113 @@
 </div>
 
 <script src="../js/notifications.js"></script>
+<!-- Profile Location Map Modal -->
+<div class="map-modal-overlay" id="profileMapOverlay" onclick="if(event.target===this)closeProfileMap()">
+  <div class="map-modal">
+    <div class="map-modal-head">
+      <h3>📍 Pin Your Location</h3>
+      <button class="map-modal-close" onclick="closeProfileMap()">✕</button>
+    </div>
+    <div class="map-search-bar">
+      <input type="text" id="profileMapSearch" placeholder="Search your city… e.g. Algiers, Paris, London" onkeydown="if(event.key==='Enter')profileMapSearch()"/>
+      <button class="map-sbtn" onclick="doProfileMapSearch()">🔍 Search</button>
+    </div>
+    <div id="profileMapContainer"></div>
+    <div class="map-footer">
+      <div class="map-footer-info" id="profileMapInfo">Click on the map or search your city.</div>
+      <button class="map-save-btn" onclick="saveProfileLocation()">✓ Save Location</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  let profileMap = null, profileMarker = null;
+  let profilePinLat = null, profilePinLng = null, profilePinLabel = '';
+
+  // Load saved location from localStorage on boot
+  (function() {
+    const saved = JSON.parse(localStorage.getItem('il-student-loc') || 'null');
+    if (saved) {
+      profilePinLat = saved.lat; profilePinLng = saved.lng; profilePinLabel = saved.label;
+      document.getElementById('profileLat').value = saved.lat;
+      document.getElementById('profileLng').value = saved.lng;
+      document.getElementById('profileLocLabel').textContent = '📍 ' + saved.label;
+      document.getElementById('profileLocLabel').style.color = 'var(--accent3)';
+    }
+  })();
+
+  function openProfileMap() {
+    document.getElementById('profileMapOverlay').classList.add('open');
+    setTimeout(() => {
+      if (!profileMap) {
+        profileMap = L.map('profileMapContainer').setView(
+          profilePinLat ? [profilePinLat, profilePinLng] : [25, 15],
+          profilePinLat ? 10 : 2
+        );
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap contributors', maxZoom: 18
+        }).addTo(profileMap);
+        if (profilePinLat) {
+          profileMarker = L.marker([profilePinLat, profilePinLng]).addTo(profileMap).bindPopup(profilePinLabel).openPopup();
+        }
+        profileMap.on('click', e => profileReverseGeocode(e.latlng.lat, e.latlng.lng));
+      } else profileMap.invalidateSize();
+    }, 120);
+  }
+
+  function closeProfileMap() {
+    document.getElementById('profileMapOverlay').classList.remove('open');
+  }
+
+  function profilePlacePin(lat, lng, label, panTo = true) {
+    profilePinLat = lat; profilePinLng = lng; profilePinLabel = label;
+    if (profileMarker) profileMap.removeLayer(profileMarker);
+    profileMarker = L.marker([lat, lng]).addTo(profileMap).bindPopup(`<strong>${label}</strong>`).openPopup();
+    if (panTo) profileMap.setView([lat, lng], 11);
+    document.getElementById('profileMapInfo').innerHTML = `📍 <strong>${label}</strong> — click Save to confirm`;
+  }
+
+  function doProfileMapSearch() {
+    const q = document.getElementById('profileMapSearch').value.trim();
+    if (!q) return;
+    fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`)
+      .then(r => r.json())
+      .then(data => {
+        if (!data.length) { alert('Location not found.'); return; }
+        const label = data[0].display_name.split(',').slice(0, 2).join(',').trim();
+        profilePlacePin(parseFloat(data[0].lat), parseFloat(data[0].lon), label);
+      });
+  }
+
+  function profileReverseGeocode(lat, lng) {
+    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
+      .then(r => r.json())
+      .then(data => {
+        const label = (data.address?.city || data.address?.town || data.address?.state || 'Selected location').split(',')[0];
+        profilePlacePin(lat, lng, label);
+      });
+  }
+
+  function useProfileGPS() {
+    if (!navigator.geolocation) { alert('Geolocation not supported.'); return; }
+    navigator.geolocation.getCurrentPosition(pos => {
+      if (!profileMap) openProfileMap();
+      setTimeout(() => profileReverseGeocode(pos.coords.latitude, pos.coords.longitude), 500);
+    }, () => alert('Could not get location. Please allow access.'));
+  }
+
+  function saveProfileLocation() {
+    if (!profilePinLat) { alert('Please click on the map to select your location first.'); return; }
+    document.getElementById('profileLat').value = profilePinLat;
+    document.getElementById('profileLng').value = profilePinLng;
+    const label = profilePinLabel.split(',')[0];
+    document.getElementById('profileLocLabel').textContent = '📍 ' + label + ' — saved ✓';
+    document.getElementById('profileLocLabel').style.color = 'var(--accent3)';
+    localStorage.setItem('il-student-loc', JSON.stringify({ lat: profilePinLat, lng: profilePinLng, label }));
+    closeProfileMap();
+  }
+</script>
 <script src="../../translate-widget.js"></script>
 </body>
 </html>
