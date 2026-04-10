@@ -21,7 +21,7 @@ try {
                NULL           AS phone,
                NULL           AS linkedin,
                NULL           AS github,
-               sp.cv_path     AS cv_path
+               NULL           AS cv_path
         FROM users u
         LEFT JOIN student_profiles sp ON sp.user_id = u.id
         WHERE u.id = ?

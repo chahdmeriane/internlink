@@ -10,7 +10,7 @@ header('Referrer-Policy: strict-origin-when-cross-origin');
 
 // ── Session hardening ─────────────────────────────────────────────────────────
 ini_set('session.cookie_httponly', 1);
-ini_set('session.cookie_samesite', 'Strict');
+ini_set('session.cookie_samesite', 'Lax');
 // ini_set('session.cookie_secure', 1); // uncomment when HTTPS is enabled
 ini_set('session.cookie_path', '/');
 session_save_path(sys_get_temp_dir());
@@ -111,8 +111,6 @@ if ($user['role'] === 'admin') {
 }
 
 // ── Students & Companies — direct login ──────────────────────────────────────
-session_regenerate_id(true);
-
 $_SESSION['user_id']    = $user['id'];
 $_SESSION['user_email'] = $user['email'];
 $_SESSION['user_name']  = $user['first_name'] . ' ' . $user['last_name'];

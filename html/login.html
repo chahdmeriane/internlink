@@ -106,12 +106,7 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
     /* ── 2FA overlay panel ── */
     #twoFaPanel { display: none; }
     .otp-inputs { display: flex; gap: 10px; justify-content: center; margin: 24px 0; }
-    .otp-digit {
-      width: 48px; height: 56px; text-align: center; font-size: 1.4rem; font-weight: 700;
-      background: var(--surface); border: 1.5px solid var(--border); border-radius: 10px;
-      color: var(--text); outline: none; transition: all 0.2s; padding: 0;
-      -webkit-appearance: none;
-    }
+    .otp-digit { width: 48px; height: 56px; text-align: center; line-height: 56px; font-size: 1.6rem; font-weight: 700; background: var(--surface); border: 1.5px solid var(--border); border-radius: 10px; color: var(--text) !important; -webkit-text-fill-color: var(--text) !important; font-family: Arial, sans-serif !important; outline: none; transition: all .2s; padding: 0; -webkit-appearance: none; }
     .otp-digit:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,142,247,0.2); background: rgba(79,142,247,0.06); }
     .otp-info { text-align: center; color: var(--muted); font-size: 0.85rem; margin-bottom: 20px; line-height: 1.6; }
     .otp-info strong { color: var(--text); }

@@ -88,8 +88,8 @@ if ($section === 'basic') {
         $avatarPath = '../uploads/avatars/' . $filename;
     }
 
-    $sql    = 'UPDATE company_profiles SET company_name = ?, country = ?, sector = ?, description = ?';
-    $params = [$companyName, $country, $sector, $description];
+    $sql    = 'UPDATE company_profiles SET company_name = ?, country = ?, city = ?, sector = ?, description = ?';
+    $params = [$companyName, $country, $city, $sector, $description];
 
     if ($avatarPath) {
         $sql     .= ', avatar_path = ?';

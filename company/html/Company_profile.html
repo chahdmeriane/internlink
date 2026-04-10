@@ -130,9 +130,9 @@
   <div class="sidebar-header">
     <div class="logo">intern<span>Link</span></div>
     <div class="company-badge">
-      <div class="company-avatar-sm">TC</div>
+      <div class="company-avatar-sm" id="sidebarAvatar">TC</div>
       <div>
-        <div class="company-name-sm">TechCorp Inc.</div>
+        <div class="company-name-sm" id="sidebarName">Loading…</div>
         <div class="company-role-sm">Company Account</div>
       </div>
     </div>
@@ -140,14 +140,13 @@
   <div class="nav-section">
     <div class="nav-label">Main</div>
     <a class="nav-item" href="company_dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
-    <a class="nav-item" href="company_offers.html"><span class="nav-icon">📋</span> Internship Offers <span class="nav-badge">4</span></a>
-    <a class="nav-item" href="company_applications.html"><span class="nav-icon">👥</span> Applications <span class="nav-badge warn">7</span></a>
+    <a class="nav-item" href="company_offers.html"><span class="nav-icon">📋</span> Internship Offers <span class="nav-badge" id="offersCount"></span></a>
+    <a class="nav-item" href="company_applications.html"><span class="nav-icon">👥</span> Applications <span class="nav-badge warn" id="appsCount"></span></a>
   </div>
   <div class="nav-section">
     <div class="nav-label">Account</div>
     <a class="nav-item active" href="company_profile.html"><span class="nav-icon">🏢</span> Company Profile</a>
-    <a class="nav-item" href="#"><span class="nav-icon">🔔</span> Notifications</a>
-    <a class="nav-item" href="#"><span class="nav-icon">⚙️</span> Settings</a>
+    <a class="nav-item" href="company_notifications.html"><span class="nav-icon">🔔</span> Notifications <span class="nav-badge warn" id="notifCount" style="display:none"></span></a>
   </div>
   <div class="sidebar-footer">
     <a class="nav-item" href="../../phpsecure/logout.php" style="color:var(--danger)"><span class="nav-icon">🚪</span> Log Out</a>
@@ -350,7 +349,7 @@
       .catch(() => console.error('Failed to load profile summary.'));
 
     // Load full profile to populate all form fields
-    fetch('../php/company_profile_save.php')
+    fetch('../php/get_company_data.php')
       .then(r => r.json())
       .then(data => {
         if (!data.success) return;
@@ -374,6 +373,8 @@
         }
       })
       .catch(() => console.error('Failed to load profile fields.'));
+
+    // (second fetch placeholder removed)
   }
 
   // ── Save basic profile ─────────────────────────────────────────────────────
@@ -413,6 +414,15 @@
           const av = document.getElementById('avatarPreview');
           if (!av.querySelector('img')) av.textContent = initials;
           showMsg('Profile saved successfully!', 'success');
+          // Update sidebar
+          const sn = document.getElementById('sidebarName');
+          const sa = document.getElementById('sidebarAvatar');
+          if (sn) sn.textContent = name;
+          if (sa && !sa.querySelector('img')) sa.textContent = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+          // If avatar was uploaded, show it in sidebar too
+          if (data.avatar_path) {
+            if (sa) sa.innerHTML = '<img src="'+data.avatar_path+'" style="width:100%;height:100%;object-fit:cover;border-radius:8px"/>';
+          }
         } else {
           showMsg(data.message || 'Failed to save profile.', 'error');
         }
@@ -526,5 +536,33 @@
   }
 </script>
 <script src="../../translate-widget.js"></script>
+<script>
+  // ── Load sidebar badges & company name ───────────────────────────────────
+  (function loadSidebar() {
+    fetch('../php/get_company_data.php')
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success) return;
+        const name = data.profile.company_name;
+        const el = document.getElementById('sidebarName');
+        const av = document.getElementById('sidebarAvatar');
+        if (el) el.textContent = name;
+        if (av) {
+          if (data.profile.avatar_path) {
+            av.innerHTML = '<img src="' + data.profile.avatar_path + '" style="width:100%;height:100%;object-fit:cover;border-radius:8px"/>';
+          } else {
+            av.textContent = data.profile.initials;
+          }
+        }
+        const oc = document.getElementById('offersCount');
+        const ac = document.getElementById('appsCount');
+        const nc = document.getElementById('notifCount');
+        if (oc) oc.textContent = data.stats.active_offers;
+        if (ac) { ac.textContent = data.stats.pending_apps; }
+        if (nc && data.stats.pending_apps > 0) { nc.textContent = data.stats.pending_apps; nc.style.display = ''; }
+      })
+      .catch(() => {});
+  })();
+</script>
 </body>
 </html>

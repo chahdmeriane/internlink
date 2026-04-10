@@ -246,15 +246,29 @@
       </div>
     </div>
 
-    <!-- Step 3 -->
+        <!-- Step 3 -->
     <div id="step3" style="display:none">
-      <div class="field">
-        <label>Your key skills (comma-separated)</label>
-        <div class="input-wrap"><span class="input-icon">⚡</span><input type="text" id="skills" placeholder="e.g. Python, Java, Data Analysis, SQL…"/></div>
+      <!-- Student fields -->
+      <div id="step3Student">
+        <div class="field">
+          <label>Your key skills (comma-separated)</label>
+          <div class="input-wrap"><span class="input-icon">⚡</span><input type="text" id="skills" placeholder="e.g. Python, Java, Data Analysis, SQL…"/></div>
+        </div>
+        <div class="field">
+          <label>Short bio / motivation (optional)</label>
+          <textarea id="bio" placeholder="Tell companies a bit about yourself…" style="width:100%;padding:12px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.875rem;outline:none;resize:vertical;min-height:80px;transition:all .2s" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(79,142,247,.12)'" onblur="this.style.borderColor='';this.style.boxShadow=''"></textarea>
+        </div>
       </div>
-      <div class="field">
-        <label>Short bio / motivation (optional)</label>
-        <textarea id="bio" placeholder="Tell companies a bit about yourself…" style="width:100%;padding:12px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.875rem;outline:none;resize:vertical;min-height:80px;transition:all .2s" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(79,142,247,.12)'" onblur="this.style.borderColor='';this.style.boxShadow=''"></textarea>
+      <!-- Company fields -->
+      <div id="step3Company" style="display:none">
+        <div class="field">
+          <label>Company Description (optional)</label>
+          <textarea id="companyDescription" placeholder="Tell students about your company, culture, and what makes you a great place to intern…" style="width:100%;padding:12px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.875rem;outline:none;resize:vertical;min-height:120px;transition:all .2s" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(79,142,247,.12)'" onblur="this.style.borderColor='';this.style.boxShadow=''"></textarea>
+        </div>
+        <div class="field">
+          <label>Company Website (optional)</label>
+          <div class="input-wrap"><span class="input-icon">🌐</span><input type="text" id="companyWebsite" placeholder="e.g. https://yourcompany.com"/></div>
+        </div>
       </div>
       <div class="terms-row">
         <input type="checkbox" id="termsCheck"/>
@@ -361,6 +375,10 @@
       document.getElementById('studentFields').style.display = currentType === 'student' ? '' : 'none';
       document.getElementById('companyFields').style.display = currentType === 'company' ? '' : 'none';
     }
+    if (n === 3) {
+      document.getElementById('step3Student').style.display = currentType === 'student' ? '' : 'none';
+      document.getElementById('step3Company').style.display = currentType === 'company' ? '' : 'none';
+    }
     document.getElementById('formTitle').textContent = ['','Create your account','Tell us about you','Almost done!'][n];
     currentStep = n;
   }
@@ -393,8 +411,10 @@
       country:     currentType === 'student' ? (document.getElementById('country')?.value || '') : (document.getElementById('companyCountry')?.value || ''),
       companyName: currentType === 'company' ? document.getElementById('companyName').value : '',
       sector:      currentType === 'company' ? document.getElementById('sector').value : '',
-      skills:      document.getElementById('skills').value,
-      bio:         document.getElementById('bio').value,
+      skills:       currentType === 'student' ? document.getElementById('skills').value : '',
+      bio:          currentType === 'student' ? document.getElementById('bio').value : '',
+      description:  currentType === 'company' ? (document.getElementById('companyDescription')?.value||'') : '',
+      website:      currentType === 'company' ? (document.getElementById('companyWebsite')?.value||'') : '',
     };
 
     // Save for resend

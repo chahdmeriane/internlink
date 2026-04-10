@@ -8,7 +8,7 @@ error_reporting(0);
 ini_set('display_errors', 0);
 
 ini_set('session.cookie_httponly', 1);
-ini_set('session.cookie_samesite', 'Strict');
+ini_set('session.cookie_samesite', 'Lax');
 // ini_set('session.cookie_secure', 1); // uncomment when HTTPS is enabled
 ini_set('session.cookie_path', '/');
 

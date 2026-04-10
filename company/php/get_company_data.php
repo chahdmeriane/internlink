@@ -101,7 +101,12 @@ echo json_encode([
         'initials'     => $initials,
         'sector'       => $profile['sector']      ?? '',
         'country'      => $profile['country']     ?? '',
+        'city'         => $profile['city']        ?? '',
+        'description'  => $profile['description'] ?? '',
         'avatar_path'  => $profile['avatar_path'] ?? '',
+        'phone'        => $profile['phone']       ?? '',
+        'linkedin'     => $profile['linkedin']    ?? '',
+        'email'        => $profile['email']       ?? '',
     ],
     'stats' => [
         'active_offers' => $activeOffersCount,
